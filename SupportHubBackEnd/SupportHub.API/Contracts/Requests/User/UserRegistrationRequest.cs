@@ -3,7 +3,7 @@ using SupportHub.Domain.Models;
 
 namespace SupportHub.API.Contracts;
 
-public class UserAndCompanyRegistrationRequest
+public class UserRegistrationRequest
 {
     [Required]
     [EmailAddress]
@@ -11,10 +11,11 @@ public class UserAndCompanyRegistrationRequest
     public string Email { get; set; }
 
     [Required]
+    [DataType(DataType.Password)]
     public string Password { get; set; }
     
-    //TODO: Add CompanyNameLength
     [Required]
-    /*[MaxLength(Company.MaxNameLength)]*/
-    public string CompanyName { get; set; }
+    [DataType(DataType.Password)]
+    [Compare("Password", ErrorMessage = "Passwords do not match")]
+    public string ConfirmPassword { get; set; }
 }

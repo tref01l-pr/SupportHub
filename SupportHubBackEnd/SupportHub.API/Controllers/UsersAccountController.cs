@@ -49,7 +49,7 @@ public class UsersAccountController : BaseController
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UserAndCompanyRegistrationAsync(
-        [FromBody] UserAndCompanyRegistrationRequest request)
+        [FromBody] UserRegistrationWithCompanyRequest request)
     {
         try
         {
@@ -127,13 +127,14 @@ public class UsersAccountController : BaseController
     }
 
     [AllowAnonymous]
-    [HttpPost("user-registration-by-company")]
+    [HttpPost("/{companyName}/user-registration")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UserRegistrationByCompanyAsync(
-        [FromBody] UserAndCompanyRegistrationRequest request)
+        [FromRoute] string companyName,
+        [FromBody] UserRegistrationRequest request)
     {
-        var company = await _companyRepository.GetByNameAsync<Company>(request.CompanyName);
+        var company = await _companyRepository.GetByNameAsync<Company>(companyName);
         if (company == null)
         {
             throw new Exception("Company with such name does not exist.");
