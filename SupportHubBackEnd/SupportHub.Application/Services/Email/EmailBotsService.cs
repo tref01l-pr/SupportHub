@@ -1,4 +1,6 @@
-﻿using CSharpFunctionalExtensions;
+﻿using AutoMapper;
+using CSharpFunctionalExtensions;
+using SupportHub.Domain.Dtos.EmailBotDtos;
 using SupportHub.Domain.Interfaces;
 using SupportHub.Domain.Interfaces.Application;
 using SupportHub.Domain.Interfaces.Application.Email;
@@ -11,18 +13,33 @@ namespace SupportHub.Application.Services.Email;
 
 public class EmailBotsService : IEmailBotsService
 {
+    private static int NUMBER_OF_MESSAGES_TO_FETCH_ON_INITIALIZE = 100;
+    
     private readonly ITransactionsRepository _transactionsRepository;
     private readonly IEmailMessagesRepository _emailMessagesRepository;
     private readonly IEmailBotsRepository _emailBotsRepository;
+    private readonly IEmailSmtpService _emailSmtpService;
+    private readonly IEmailImapService _emailImapService;
+    private readonly IMapper _mapper;
+    private readonly IMessagesService _messagesService;
+
 
     public EmailBotsService(
         ITransactionsRepository transactionsRepository,
         IEmailMessagesRepository emailMessagesRepository,
-        IEmailBotsRepository emailBotsRepository)
+        IEmailBotsRepository emailBotsRepository,
+        IEmailSmtpService emailSmtpService,
+        IEmailImapService emailImapService,
+        IMessagesService messagesService,
+        IMapper mapper)
     {
         _transactionsRepository = transactionsRepository;
         _emailMessagesRepository = emailMessagesRepository;
         _emailBotsRepository = emailBotsRepository;
+        _emailSmtpService = emailSmtpService;
+        _emailImapService = emailImapService;
+        _messagesService = messagesService;
+        _mapper = mapper;
     }
 
     public async Task<Result<TProjectTo>> GetByIdAsync<TProjectTo>(int id)
@@ -61,8 +78,43 @@ public class EmailBotsService : IEmailBotsService
                 throw new Exception("email bot already exists");
             }
 
-            var creationResult = await _emailBotsRepository.CreateAsync<TProjectTo>(emailBot);
-            return creationResult;
+            var testSmtpConnectionResult = await _emailSmtpService.TestSmtpConnectionAsync(
+                emailBot.Email,
+                emailBot.Password,
+                emailBot.SmtpHost,
+                emailBot.SmtpPort);
+
+            if (testSmtpConnectionResult.IsFailure)
+            {
+                throw new Exception(testSmtpConnectionResult.Error);
+            }
+
+            var testImapConnectionResult = await _emailImapService.TestImapConnectionAsync(
+                emailBot.Email,
+                emailBot.Password,
+                emailBot.ImapHost,
+                emailBot.ImapPort);
+
+            if (testImapConnectionResult.IsFailure)
+            {
+                throw new Exception(testImapConnectionResult.Error);
+            }
+
+            var creationResult = await _emailBotsRepository.CreateAsync<EmailBotDto>(emailBot);
+
+            var initializeFetchMessages = await _messagesService.AddMessageOnInitialize(creationResult, NUMBER_OF_MESSAGES_TO_FETCH_ON_INITIALIZE);
+            if (initializeFetchMessages.IsFailure)
+            {
+                throw new Exception(initializeFetchMessages.Error);
+            }
+
+            var result = await _emailBotsRepository.GetByIdAsync<TProjectTo>(creationResult.Id);
+            if (result == null)
+            {
+                throw new Exception("email bot was not created");
+            }
+            
+            return result;
         }
         catch (Exception e)
         {

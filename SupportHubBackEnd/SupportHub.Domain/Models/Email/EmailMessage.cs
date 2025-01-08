@@ -1,5 +1,4 @@
-﻿using System.Net.Mail;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 
 namespace SupportHub.Domain.Models;
 
@@ -7,7 +6,7 @@ public class EmailMessage
 {
     public const int MaxEmailLength = 320;
     public const int MaxSubjectLength = 5000;
-    public const int MaxBodyLength = 15000;
+    public const int MaxBodyLength = 25000;
 
     private EmailMessage(
         int id,

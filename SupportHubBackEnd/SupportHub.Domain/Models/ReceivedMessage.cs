@@ -171,10 +171,7 @@ public class ReceivedMessage
         {
             if (body.Length > MaxBodyLength)
             {
-                failure = Result.Combine(
-                    failure,
-                    Result.Failure<ReceivedMessage>(
-                        $"ReceivedMessage {nameof(body)} can`t be more than {MaxBodyLength} chars"));
+                body = body.Substring(0, MaxBodyLength);
             }
         }
         else

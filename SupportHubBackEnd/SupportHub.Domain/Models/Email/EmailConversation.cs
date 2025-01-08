@@ -11,7 +11,6 @@ public class EmailConversation
     public string MsgId { get; set; }
     public string Subject { get; set; }
 
-
     private EmailConversation(
         int id,
         int companyId,

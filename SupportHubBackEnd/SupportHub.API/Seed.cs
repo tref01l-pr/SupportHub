@@ -2,7 +2,6 @@
 using SupportHub.API;
 using SupportHub.DataAccess.SqlServer;
 using SupportHub.DataAccess.SqlServer.Entities;
-using SupportHub.DataAccess.SqlServer.Entities.Email;
 using SupportHub.Domain.Interfaces;
 using SupportHub.Domain.Models;
 using Microsoft.AspNetCore.Identity;
@@ -13,21 +12,21 @@ public class Seed
     private readonly SupportHubDbContext _context;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly UserManager<UserEntity> _userManager;
-    private readonly IImapService _imapService;
+    private readonly IEmailImapService _emailImapService;
     private readonly ImapOptions _imapOptions;
     private readonly IMapper _mapper;
 
     public Seed(SupportHubDbContext context,
         RoleManager<IdentityRole<Guid>> roleManager,
         UserManager<UserEntity> userManager,
-        IImapService imapService,
+        IEmailImapService emailImapService,
         IOptions<ImapOptions> imapOptions,
         IMapper mapper)
     {
         _context = context;
         _roleManager = roleManager;
         _userManager = userManager;
-        _imapService = imapService;
+        _emailImapService = emailImapService;
         _imapOptions = imapOptions.Value;
         _mapper = mapper;
     }

@@ -5,11 +5,9 @@ using Microsoft.Extensions.Options;
 using SupportHub.API.Contracts;
 using SupportHub.Domain.Dtos.EmailBotDtos;
 using SupportHub.Domain.Dtos.EmailConversationDtos;
-using SupportHub.Domain.Interfaces;
 using SupportHub.Domain.Interfaces.Application;
 using SupportHub.Domain.Interfaces.Application.Email;
 using SupportHub.Domain.Interfaces.DataAccess;
-using SupportHub.Domain.Interfaces.Infrastructure;
 using SupportHub.Domain.Models;
 
 namespace SupportHub.API.Controllers;
@@ -22,8 +20,6 @@ public class EmailController : BaseController
     private readonly IMapper _mapper;
     private readonly SmtpOptions _smtpOptions;
     private readonly ImapOptions _imapOptions;
-    private readonly IImapService _imapService;
-    private readonly ISmtpService _smtpService;
     private readonly IMessagesService _messagesService;
     private readonly IEmailBotsService _emailBotsService;
     private readonly IEmailConversationsRepository _emailConversationsRepository;
@@ -33,8 +29,6 @@ public class EmailController : BaseController
         IMapper mapper,
         IOptions<SmtpOptions> smtpOptions,
         IOptions<ImapOptions> imapOptions,
-        IImapService imapService,
-        ISmtpService smtpService,
         IMessagesService messagesService,
         IEmailBotsService emailBotsService,
         IEmailConversationsRepository emailConversationsRepository)
@@ -43,8 +37,6 @@ public class EmailController : BaseController
         _mapper = mapper;
         _smtpOptions = smtpOptions.Value;
         _imapOptions = imapOptions.Value;
-        _imapService = imapService;
-        _smtpService = smtpService;
         _messagesService = messagesService;
         _emailBotsService = emailBotsService;
         _emailConversationsRepository = emailConversationsRepository;

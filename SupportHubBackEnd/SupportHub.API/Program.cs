@@ -84,8 +84,8 @@ public class Program
         });
 
         builder.Services.AddTransient<Seed>();
-        builder.Services.AddScoped<IImapService, ImapService>();
-        builder.Services.AddScoped<ISmtpService, SmtpService>();
+        builder.Services.AddScoped<IEmailImapService, EmailImapService>();
+        builder.Services.AddScoped<IEmailSmtpService, EmailSmtpService>();
         
         builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
         builder.Services.AddScoped<IEmailMessagesRepository, EmailMessagesRepository>();

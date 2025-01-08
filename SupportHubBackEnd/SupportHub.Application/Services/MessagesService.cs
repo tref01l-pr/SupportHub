@@ -18,8 +18,8 @@ namespace SupportHub.Application.Services;
 
 public class MessagesService : IMessagesService
 {
-    private readonly IImapService _imapService;
-    private readonly ISmtpService _smtpService;
+    private readonly IEmailImapService _emailImapService;
+    private readonly IEmailSmtpService _emailSmtpService;
     private readonly ITransactionsRepository _transactionsRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IEmailMessagesRepository _emailMessagesRepository;
@@ -30,8 +30,8 @@ public class MessagesService : IMessagesService
     private readonly ILogger<MessagesService> _logger;
 
     public MessagesService(
-        IImapService imapService,
-        ISmtpService smtpService,
+        IEmailImapService emailImapService,
+        IEmailSmtpService emailSmtpService,
         IUsersRepository usersRepository,
         ITransactionsRepository transactionsRepository,
         IEmailMessagesRepository emailMessagesRepository,
@@ -41,8 +41,8 @@ public class MessagesService : IMessagesService
         IEmailBotsRepository emailBotsRepository,
         ILogger<MessagesService> logger)
     {
-        _imapService = imapService;
-        _smtpService = smtpService;
+        _emailImapService = emailImapService;
+        _emailSmtpService = emailSmtpService;
         _usersRepository = usersRepository;
         _transactionsRepository = transactionsRepository;
         _emailMessagesRepository = emailMessagesRepository;
@@ -53,7 +53,8 @@ public class MessagesService : IMessagesService
         _logger = logger;
     }
 
-    public async Task<Result<EmailMessageDto>> SendEmailMessageAsync(int emailConversationId, int companyId, string body, Guid userId)
+    public async Task<Result<EmailMessageDto>> SendEmailMessageAsync(int emailConversationId, int companyId,
+        string body, Guid userId)
     {
         try
         {
@@ -87,7 +88,7 @@ public class MessagesService : IMessagesService
                 throw new Exception(emailMessageWithoutMsgId.Error);
             }
 
-            var sendResult = await _smtpService.SendReplyMessageAsync(emailConversation.EmailBot,
+            var sendResult = await _emailSmtpService.SendReplyMessageAsync(emailConversation.EmailBot,
                 emailMessageWithoutMsgId.Value,
                 emailConversation.EmailRequester.Email, emailConversation.MsgId);
             if (sendResult.IsFailure)
@@ -142,7 +143,7 @@ public class MessagesService : IMessagesService
                 throw new Exception("Email bot not found");
             }
 
-            var sendResult = await _smtpService.SendMessageAsync(emailBot, "Test message", message, to);
+            var sendResult = await _emailSmtpService.SendMessageAsync(emailBot, "Test message", message, to);
             if (sendResult.IsFailure)
             {
                 throw new Exception(sendResult.Error);
@@ -328,6 +329,31 @@ public class MessagesService : IMessagesService
         }
     }
 
+    public async Task<Result> AddMessageOnInitialize(EmailBotDto emailBot, int count)
+    {
+        var newMessagesFromEmailBot = await CheckUpdates(emailBot.Email, emailBot.Password,
+            emailBot.ImapPort, emailBot.ImapHost);
+        if (newMessagesFromEmailBot.IsFailure)
+        {
+            return Result.Failure(newMessagesFromEmailBot.Error);
+        }
+
+        var messagesByCount = await _emailImapService.GetRecentMessages(emailBot.Email, emailBot.Password,
+            emailBot.ImapPort, emailBot.ImapHost, count);
+        if (messagesByCount.Value.Count == 0)
+        {
+            return Result.Failure(messagesByCount.Error);
+        }
+        
+        return await ProcessEmailMessages(
+            newMessagesFromEmailBot.Value
+                .Concat(messagesByCount.Value)
+                .GroupBy(msg => msg.MsgId)
+                .Select(group => group.First())
+                .ToList(),
+            emailBot);
+    }
+
     private async Task<Result> AddEmailMessagesByEmailBot(EmailBotDto emailBot)
     {
         var newMessagesFromEmailBot = await CheckUpdates(emailBot.Email, emailBot.Password,
@@ -348,11 +374,11 @@ public class MessagesService : IMessagesService
         return await ProcessEmailMessages(newMessagesFromEmailBot.Value, emailBot);
     }
 
-    public async Task<Result> ProcessEmailMessages(IEnumerable<ReceivedMessage> messages, EmailBotDto emailBot)
+    private async Task<Result> ProcessEmailMessages(IEnumerable<ReceivedMessage> messages, EmailBotDto emailBot)
     {
         var messageDictionary = messages.ToDictionary(m => m.MsgId);
-        var conversations = new Dictionary<string, EmailConversationDto>(); // Храним конверсии по MsgId сообщения
-        var emailRequesters = new Dictionary<string, EmailRequesterDto>(); // Храним запросчиков по их email
+        var conversations = new Dictionary<string, EmailConversationDto>();
+        var emailRequesters = new Dictionary<string, EmailRequesterDto>();
 
         try
         {
@@ -366,7 +392,6 @@ public class MessagesService : IMessagesService
             }
 
             var pendingReplies = new List<ReceivedMessage>();
-            // Обрабатываем ответы
             foreach (var message in messages.Where(m => m.ReplyToMsgId != null).ToList())
             {
                 if (messageDictionary.TryGetValue(message.ReplyToMsgId, out var parentMessage))
@@ -400,7 +425,7 @@ public class MessagesService : IMessagesService
                     m => new SimpleMessageInfo
                     {
                         Id = m.MsgId,
-                        RequesterEmail = m.RequsterEmail
+                        RequesterEmail = m.RequsterEmail,
                     }).ToList());
                 if (result.IsFailure)
                 {
@@ -452,12 +477,12 @@ public class MessagesService : IMessagesService
         ReceivedMessage message,
         EmailBotDto emailBot)
     {
-        
         var messageExist = await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.MsgId);
         if (messageExist != null)
         {
             return Result.Failure<EmailMessageDto>("Message already exists");
         }
+
         var emailRequesterResult = await GetOrCreateEmailRequesterAsync(message.RequsterEmail, emailRequesters);
         if (emailRequesterResult.IsFailure)
         {
@@ -486,7 +511,7 @@ public class MessagesService : IMessagesService
     private async Task<Result<Dictionary<string, List<ReceivedMessage>>>> GetConversationsByReplyIdsAsync(
         EmailBotDto emailBot, List<SimpleMessageInfo> ids)
     {
-        var conversationsResult = await _imapService.GetConversationsByIds(emailBot.Email, emailBot.Password,
+        var conversationsResult = await _emailImapService.GetConversationsByIds(emailBot.Email, emailBot.Password,
             emailBot.ImapPort, emailBot.ImapHost, ids);
         if (conversationsResult.IsFailure)
         {
@@ -518,7 +543,7 @@ public class MessagesService : IMessagesService
 
         return Result.Success(createdRequester);
     }
-    
+
     private async Task<Result<EmailRequesterDto>> FindEmailRequesterAsync(string email,
         Dictionary<string, EmailRequesterDto> emailRequesters)
     {
@@ -557,7 +582,7 @@ public class MessagesService : IMessagesService
         {
             return Result.Failure<EmailMessageDto>("Message already exists");
         }
-        
+
         var emailMessage = EmailMessage.Builder()
             .SetEmailConversationId(conversationId)
             .SetEmailRequesterId(emailRequesterId)
@@ -583,7 +608,7 @@ public class MessagesService : IMessagesService
 
     private async Task<Result<List<ReceivedMessage>>> CheckUpdates(string user, string password, int port, string host)
     {
-        var newMessages = await _imapService.GetUnreadMessages(user, password, port, host);
+        var newMessages = await _emailImapService.GetUnreadMessages(user, password, port, host);
         if (newMessages.IsFailure)
         {
             return Result.Failure<List<ReceivedMessage>>(newMessages.Error);

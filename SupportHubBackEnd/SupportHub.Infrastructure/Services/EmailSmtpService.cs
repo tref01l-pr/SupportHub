@@ -1,5 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using MailKit.Net.Smtp;
+using MailKit.Security;
 using MimeKit;
 using MimeKit.Utils;
 using SupportHub.Domain.Dtos.EmailBotDtos;
@@ -8,7 +9,7 @@ using SupportHub.Domain.Models;
 
 namespace SupportHub.Infrastructure.Services;
 
-public class SmtpService : ISmtpService
+public class EmailSmtpService : IEmailSmtpService
 {
     /*"smtp.gmail.com", 587*/
     public async Task<Result<string>> SendReplyMessageAsync(EmailBotDto emailBot, EmailMessage emailMessage,
@@ -90,6 +91,27 @@ public class SmtpService : ISmtpService
         catch (Exception e)
         {
             return Result.Failure(e.Message);
+        }
+    }
+    
+    public async Task<Result> TestSmtpConnectionAsync(string emailBot, string password, string smtpHost, int smtpPort)
+    {
+        try
+        {
+            using (var smtp = new SmtpClient())
+            {
+                await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.Auto);
+
+                await smtp.AuthenticateAsync(emailBot, password);
+
+                await smtp.DisconnectAsync(true);
+            }
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Error during connection to smtp: {ex.Message}");
         }
     }
 }
