@@ -159,11 +159,9 @@ public class MessagesService : IMessagesService
 
 
     //TODO make here a request to redis
-    public async Task<Result<ImapMessage[]>> GetLastMessagesAsync(ImapOptions imapOptions)
+    public async Task<Result<List<TProjectTo>>> GetLastConversationsByCompanyIdAsync<TProjectTo>(int companyId)
     {
-        var newMessages =
-            await CheckUpdates(imapOptions.User, imapOptions.Password, imapOptions.Port, "imap.gmail.com");
-        var cacheLastMessages = await _cacheRepository.GetLastMessagesAsync();
+        /*var cacheLastMessages = await _cacheRepository.GetLastMessagesAsync();
         if (cacheLastMessages.IsFailure)
         {
             return Result.Failure<ImapMessage[]>(cacheLastMessages.Error);
@@ -172,97 +170,21 @@ public class MessagesService : IMessagesService
         if (cacheLastMessages.Value.Any())
         {
             return cacheLastMessages.Value.ToArray();
-        }
-
-        var receivedMessageFromQuestionEmails = await _emailMessagesRepository.GetLastMessagesAsync();
-        if (receivedMessageFromQuestionEmails.Any())
-        {
-            return Result.Failure<ImapMessage[]>("Received messages not found");
-        }
-
-        //TODO Remake here
-        var sentMessageFromEmployee = await _emailMessagesRepository.GetLastMessagesAsync();
-
-        if (sentMessageFromEmployee.Any())
-        {
-            return Result.Failure<ImapMessage[]>("Sent messages not found");
-        }
-
-        var filteredSentMessages = new List<ImapMessage>();
-        //TODO: refactor this
-        /*var userIds = sentMessageFromEmployee.Value.Select(x => x.UserId).Distinct();
-        var users = await _usersRepository.GetByIdsAsync(userIds);
-
-        foreach (var receivedMessage in receivedMessageFromQuestionEmails.Value)
-        {
-            var message = filteredSentMessages.FirstOrDefault(m => m.Requester == receivedMessage.);
-            if (message != null && message.Date < receivedMessage.Date)
-            {
-                filteredSentMessages.Remove(message);
-            }
-            else if (message != null && message.Date >= receivedMessage.Date)
-            {
-                continue;
-            }
-
-            var result = ImapMessage.Create(
-                receivedMessage.From,
-                receivedMessage.From,
-                receivedMessage.Subject,
-                receivedMessage.Body,
-                receivedMessage.Date,
-                MessageTypes.Question);
-
-            if (result.IsFailure)
-            {
-                return Result.Failure<ImapMessage[]>(result.Error);
-            }
-
-            filteredSentMessages.Add(result.Value);
-        }
-
-
-        foreach (var sentMessage in sentMessageFromEmployee.Value)
-        {
-            var message = filteredSentMessages.FirstOrDefault(m => m.Requester == sentMessage.To);
-
-            if (message != null && message.Date < sentMessage.Date)
-            {
-                filteredSentMessages.Remove(message);
-            }
-            else if (message != null && message.Date >= sentMessage.Date)
-            {
-                continue;
-            }
-
-            var user = users.FirstOrDefault(u => u.Id == sentMessage.UserId);
-
-            var result = ImapMessage.Create(
-                sentMessage.To,
-                user?.Email,
-                sentMessage.Subject,
-                sentMessage.Body,
-                sentMessage.Date,
-                MessageTypes.Answer);
-
-            if (result.IsFailure)
-            {
-                return Result.Failure<ImapMessage[]>(result.Error);
-            }
-
-            filteredSentMessages.Add(result.Value);
-        }
-
-        filteredSentMessages = filteredSentMessages.OrderByDescending(u => u.Date).ToList();
-
-        var cacheSavingResult = await _cacheRepository.SetLastMessagesAsync(filteredSentMessages.ToArray());
-
-        if (cacheSavingResult.IsFailure)
-        {
-            return Result.Failure<ImapMessage[]>(cacheSavingResult.Error);
         }*/
-
-        return filteredSentMessages.ToArray();
+        try
+        {
+            var receivedMessageFromQuestionEmails = await _emailConversationsRepository.GetLastByCompanyIdAsync<TProjectTo>(companyId);
+            if (!receivedMessageFromQuestionEmails.Any())
+            {
+                throw new Exception("Received messages not found");
+            }
+        
+            return receivedMessageFromQuestionEmails;
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<List<TProjectTo>>(e.Message);
+        }
     }
 
     public async Task<Result> EventOnMessageReceivedAsync(ImapOptions imapOptions)

@@ -53,7 +53,15 @@ public class EmailConversationsRepository : IEmailConversationsRepository
         
         return _mapper.Map<EmailConversationEntity, TProjectTo>(newConversationEntity);
     }
-    
+
+    public async Task<List<TProjectTo>> GetLastByCompanyIdAsync<TProjectTo>(int companyId) =>
+        await _context.EmailConversations
+            .AsNoTracking()
+            .Where(ec => ec.CompanyId == companyId)
+            .OrderByDescending(ec => ec.LastUpdateDate)
+            .ProjectTo<TProjectTo>(_mapperConfig)
+            .ToListAsync();
+
     private async Task<Result> SaveAsync() =>
         await _context.SaveChangesAsync() > 0
             ? Result.Success()

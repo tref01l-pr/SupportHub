@@ -65,7 +65,17 @@ public class EmailController : BaseController
     [HttpGet("get-last-messages")]
     public async Task<IActionResult> GetLastMessages()
     {
-        var resultMessages = await _messagesService.GetLastMessagesAsync(_imapOptions);
+        if (CompanyId.IsFailure)
+        {
+            return BadRequest(CompanyId.Error);
+        }
+
+        if (CompanyId.Value <= 0)
+        {
+            return BadRequest("CompanyId cannot be less than or equal to 0");
+        }
+        
+        var resultMessages = await _messagesService.GetLastConversationsByCompanyIdAsync<EmailConversationWithLastUpdateMessagesDto>(CompanyId.Value);
         if (resultMessages.IsFailure)
         {
             return BadRequest(resultMessages.Error);

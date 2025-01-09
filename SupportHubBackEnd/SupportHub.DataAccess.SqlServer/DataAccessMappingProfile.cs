@@ -16,13 +16,13 @@ public class DataAccessMappingProfile : Profile
     {
         CreateMap<UserEntity, User>().ReverseMap();
         CreateMap<SessionEntity, Session>().ReverseMap();
-        
+
         CreateMap<CompanyEntity, Company>().ReverseMap();
-        
+
         CreateMap<EmailMessageEntity, EmailMessage>().ReverseMap();
         CreateMap<EmailMessageEntity, EmailMessageDto>();
         CreateMap<EmailMessageEntity, EmailMessageWithConversationDto>();
-        
+
 
         CreateMap<EmailBotEntity, EmailBot>().ReverseMap();
         CreateMap<EmailBotEntity, EmailBotDto>();
@@ -30,10 +30,15 @@ public class DataAccessMappingProfile : Profile
         CreateMap<EmailConversationEntity, EmailConversation>().ReverseMap();
         CreateMap<EmailConversationEntity, EmailConversationDto>();
         CreateMap<EmailConversationEntity, EmailConversationWithRequesterWithBotDto>();
+        CreateMap<EmailConversationEntity, EmailConversationWithLastUpdateMessagesDto>()
+            .ForMember(dest => dest.Message, opt => opt.MapFrom(src =>
+                src.EmailMessages
+                    .OrderByDescending(message => message.Date)
+                    .FirstOrDefault()));
         CreateMap<EmailConversationEntity, EmailConversationWithMessagesDto>()
             .IncludeBase<EmailConversationEntity, EmailConversationDto>()
             .ForMember(dest => dest.Messages, opt => opt.MapFrom(src => src.EmailMessages));
-        
+
         CreateMap<EmailRequesterEntity, EmailRequester>().ReverseMap();
         CreateMap<EmailRequesterEntity, EmailRequesterDto>();
     }
