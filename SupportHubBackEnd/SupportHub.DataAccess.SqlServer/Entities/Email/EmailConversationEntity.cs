@@ -11,6 +11,7 @@ public class EmailConversationEntity
     public int EmailRequesterId { get; set; }
     public string MsgId { get; set; }
     public string Subject { get; set; }
+    public DateTimeOffset LastUpdateDate { get; set; }
     public CompanyEntity Company { get; set; }
     public EmailBotEntity EmailBot { get; set; }
     public EmailRequesterEntity EmailRequester { get; set; }
@@ -36,6 +37,9 @@ public class EmailConversationEntityConfiguration : IEntityTypeConfiguration<Ema
             .IsRequired(true);
         
         builder.Property(x => x.Subject)
+            .IsRequired(true);
+        
+        builder.Property(x => x.LastUpdateDate)
             .IsRequired(true);
 
         builder.HasOne(ec => ec.Company)

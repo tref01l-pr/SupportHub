@@ -30,7 +30,9 @@ public class DataAccessMappingProfile : Profile
         CreateMap<EmailConversationEntity, EmailConversation>().ReverseMap();
         CreateMap<EmailConversationEntity, EmailConversationDto>();
         CreateMap<EmailConversationEntity, EmailConversationWithRequesterWithBotDto>();
-        CreateMap<EmailConversationEntity, EmailConversationWithMessagesDto>();
+        CreateMap<EmailConversationEntity, EmailConversationWithMessagesDto>()
+            .IncludeBase<EmailConversationEntity, EmailConversationDto>()
+            .ForMember(dest => dest.Messages, opt => opt.MapFrom(src => src.EmailMessages));
         
         CreateMap<EmailRequesterEntity, EmailRequester>().ReverseMap();
         CreateMap<EmailRequesterEntity, EmailRequesterDto>();

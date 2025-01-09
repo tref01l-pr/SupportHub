@@ -28,6 +28,13 @@ public class EmailConversationsRepository : IEmailConversationsRepository
             .ProjectTo<TProjectTo>(_mapperConfig)
             .FirstOrDefaultAsync();
 
+    public async Task<List<TProjectTo>> GetByCompanyIdAsync<TProjectTo>(int companyId) =>
+        await _context.EmailConversations
+            .AsNoTracking()
+            .Where(ec => ec.CompanyId == companyId)
+            .ProjectTo<TProjectTo>(_mapperConfig)
+            .ToListAsync();
+
     public async Task<List<TProjectTo>> GetAllAsync<TProjectTo>() =>
         await _context.EmailConversations
             .AsNoTracking()

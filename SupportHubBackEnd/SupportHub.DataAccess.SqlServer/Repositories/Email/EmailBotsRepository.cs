@@ -12,7 +12,7 @@ public class EmailBotsRepository : IEmailBotsRepository
 {
     private readonly SupportHubDbContext _context;
     private readonly IMapper _mapper;
-    
+
     private IConfigurationProvider _mapperConfig => _mapper.ConfigurationProvider;
 
     public EmailBotsRepository(SupportHubDbContext context, IMapper mapper)
@@ -20,7 +20,7 @@ public class EmailBotsRepository : IEmailBotsRepository
         _context = context;
         _mapper = mapper;
     }
-    
+
     public async Task<TProjectTo?> GetByIdAsync<TProjectTo>(int id) =>
         await _context.EmailBots
             .AsNoTracking()
@@ -31,9 +31,16 @@ public class EmailBotsRepository : IEmailBotsRepository
     public async Task<TProjectTo?> GetByEmailAsync<TProjectTo>(string email) =>
         await _context.EmailBots
             .AsNoTracking()
-            .Where(eb => eb.Email == email)
+            .Where(eb => eb.Email == email && eb.IsDeleted == false)
             .ProjectTo<TProjectTo>(_mapperConfig)
             .FirstOrDefaultAsync();
+
+    public async Task<List<TProjectTo>> GetByCompanyIdAsync<TProjectTo>(int companyId) =>
+        await _context.EmailBots
+            .AsNoTracking()
+            .Where(eb => eb.CompanyId == companyId && eb.IsDeleted == false)
+            .ProjectTo<TProjectTo>(_mapperConfig)
+            .ToListAsync();
 
     public async Task<TProjectTo> CreateAsync<TProjectTo>(EmailBot emailBot)
     {
@@ -48,14 +55,37 @@ public class EmailBotsRepository : IEmailBotsRepository
         return _mapper.Map<EmailBotEntity, TProjectTo>(emailBotEntity);
     }
 
-    public Task<TProjectTo> UpdateAsync<TProjectTo>(EmailBot emailBot)
+    public async Task<TProjectTo> UpdateAsync<TProjectTo>(EmailBot emailBot)
     {
-        throw new NotImplementedException();
+        var emailBotEntity = _mapper.Map<EmailBot, EmailBotEntity>(emailBot);
+        _context.EmailBots.Update(emailBotEntity);
+        var result = await SaveAsync();
+        if (result.IsFailure)
+        {
+            throw new Exception("Something went wrong during update message");
+        }
+
+        return _mapper.Map<EmailBotEntity, TProjectTo>(emailBotEntity);
     }
 
-    public Task<TProjectTo> DeleteAsync<TProjectTo>(int id)
+    public async Task<TProjectTo> DeleteAsync<TProjectTo>(int id)
     {
-        throw new NotImplementedException();
+        var emailBotEntity = await _context.EmailBots.Where(eb => eb.Id == id).FirstOrDefaultAsync();
+        if (emailBotEntity == null)
+        {
+            throw new Exception("Email bot not found");
+        }
+
+        emailBotEntity.IsDeleted = true;
+        emailBotEntity.DeletedOn = DateOnly.FromDateTime(DateTime.Now);
+        _context.EmailBots.Update(emailBotEntity);
+        var result = await SaveAsync();
+        if (result.IsFailure)
+        {
+            throw new Exception("Something went wrong during delete message");
+        }
+
+        return _mapper.Map<EmailBotEntity, TProjectTo>(emailBotEntity);
     }
 
     public async Task<List<TProjectTo>> GetByEmailsAsync<TProjectTo>(List<string> botEmails) =>

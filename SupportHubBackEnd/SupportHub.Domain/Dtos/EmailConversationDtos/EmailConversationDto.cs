@@ -8,4 +8,5 @@ public class EmailConversationDto
     public int EmailRequesterId { get; set; }
     public string MsgId { get; set; }
     public string Subject { get; set; }
+    public DateTimeOffset LastUpdateDate { get; set; }
 }

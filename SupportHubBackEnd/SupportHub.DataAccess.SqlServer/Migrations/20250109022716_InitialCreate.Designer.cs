@@ -12,7 +12,7 @@ using SupportHub.DataAccess.SqlServer;
 namespace SupportHub.DataAccess.SqlServer.Migrations
 {
     [DbContext(typeof(SupportHubDbContext))]
-    [Migration("20241211192850_InitialCreate")]
+    [Migration("20250109022716_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -184,9 +184,12 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
+                    b.Property<DateOnly?>("DeletedOn")
+                        .HasColumnType("date");
+
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ImapHost")
                         .IsRequired()
@@ -194,6 +197,9 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
 
                     b.Property<int>("ImapPort")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -209,6 +215,10 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("EmailBots");
                 });
@@ -229,6 +239,9 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
 
                     b.Property<int>("EmailRequesterId")
                         .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("LastUpdateDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("MsgId")
                         .IsRequired()

@@ -1,4 +1,6 @@
-﻿namespace SupportHub.Domain.Dtos.EmailMeesageDtos;
+﻿using SupportHub.Domain.Models;
+
+namespace SupportHub.Domain.Dtos.EmailMeesageDtos;
 
 public class EmailMessageDto
 {
@@ -9,4 +11,6 @@ public class EmailMessageDto
     public string MessageId { get; set; }
     public string? Subject { get; set; }
     public string Body { get; set; }
+    public MessageTypes MessageType { get; set; }
+    public DateTimeOffset Date { get; set; }
 }

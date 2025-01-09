@@ -12,7 +12,7 @@ public class EmailMessagesRepository : IEmailMessagesRepository
 {
     private readonly SupportHubDbContext _context;
     private readonly IMapper _mapper;
-    
+
     private IConfigurationProvider _mapperConfig => _mapper.ConfigurationProvider;
 
     public EmailMessagesRepository(SupportHubDbContext context, IMapper mapper)
@@ -26,7 +26,7 @@ public class EmailMessagesRepository : IEmailMessagesRepository
         int count = await _context.EmailMessages.CountAsync();
         return Result.Success(count);
     }
-    
+
     public async Task<EmailMessage[]> GetByRequesterIdAsync(int id) =>
         await _context.EmailMessages
             .TagWith("Get By Requester Async messages by question email")
@@ -41,7 +41,7 @@ public class EmailMessagesRepository : IEmailMessagesRepository
             .AsNoTracking()
             .GroupBy(m => m.EmailConversationId)
             .Select(g =>
-                g.OrderByDescending(m => m.Date).FirstOrDefault()) // Выбираем последнее сообщение из каждой группы
+                g.OrderByDescending(m => m.Date).FirstOrDefault())
             .ProjectTo<EmailMessage>(_mapperConfig)
             .ToArrayAsync();
 
@@ -49,6 +49,22 @@ public class EmailMessagesRepository : IEmailMessagesRepository
     {
         var receivedMessageEntity = _mapper.Map<EmailMessage, EmailMessageEntity>(emailMessage);
         await _context.EmailMessages.AddAsync(receivedMessageEntity);
+
+        //Update conversation last message
+        var conversation = await _context.EmailConversations
+            .TagWith("Get conversation by id")
+            .FirstOrDefaultAsync(x => x.Id == emailMessage.EmailConversationId);
+        if (conversation == null)
+        {
+            return Result.Failure<TProjectTo>("Conversation not found");
+        }
+
+        if (conversation.LastUpdateDate < emailMessage.Date)
+        {
+            conversation.LastUpdateDate = emailMessage.Date;
+            _context.EmailConversations.Update(conversation);
+        }
+
         var result = await SaveAsync();
         if (!result.Value)
         {

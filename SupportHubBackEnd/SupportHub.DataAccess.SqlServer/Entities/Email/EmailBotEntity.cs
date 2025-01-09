@@ -13,6 +13,8 @@ public class EmailBotEntity
     public string SmtpHost { get; set; }
     public int ImapPort { get; set; }
     public string ImapHost { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateOnly? DeletedOn { get; set; }
     public CompanyEntity Company { get; set; }
     public virtual ICollection<EmailConversationEntity> EmailConversations { get; set; }
 }
@@ -43,6 +45,16 @@ public class EmailBotEntityConfiguration : IEntityTypeConfiguration<EmailBotEnti
 
         builder.Property(x => x.ImapHost)
             .IsRequired(true);
+        
+        builder.Property(x => x.IsDeleted)
+            .IsRequired(true);
+        
+        builder.Property(x => x.DeletedOn)
+            .IsRequired(false);
+        
+        builder.HasIndex(msg => msg.Email)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         builder.HasOne(eb => eb.Company)
             .WithMany(c => c.EmailBots)

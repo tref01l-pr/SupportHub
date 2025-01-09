@@ -124,12 +124,14 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CompanyId = table.Column<int>(type: "int", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SmtpPort = table.Column<int>(type: "int", nullable: false),
                     SmtpHost = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ImapPort = table.Column<int>(type: "int", nullable: false),
-                    ImapHost = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ImapHost = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOn = table.Column<DateOnly>(type: "date", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -237,7 +239,8 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
                     EmailBotId = table.Column<int>(type: "int", nullable: false),
                     EmailRequesterId = table.Column<int>(type: "int", nullable: false),
                     MsgId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LastUpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -348,6 +351,13 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
                 name: "IX_EmailBots_CompanyId",
                 table: "EmailBots",
                 column: "CompanyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmailBots_Email",
+                table: "EmailBots",
+                column: "Email",
+                unique: true,
+                filter: "[IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmailConversations_CompanyId",

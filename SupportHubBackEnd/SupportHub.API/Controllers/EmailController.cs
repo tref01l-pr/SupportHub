@@ -125,6 +125,45 @@ public class EmailController : BaseController
         return Ok("Message was sent))");
     }
     
+    [HttpGet("get-email-bots")]
+    public async Task<IActionResult> GetEmailBots()
+    {
+        if (CompanyId.IsFailure)
+        {
+            return BadRequest(CompanyId.Error);
+        }
+
+        if (CompanyId.Value <= 0)
+        {
+            return BadRequest("CompanyId cannot be less than or equal to 0");
+        }
+        
+        var emailBots = await _emailBotsService.GetByCompanyIdAsync<EmailBotDto>(CompanyId.Value);
+        if (emailBots.IsFailure)
+        {
+            return BadRequest(emailBots.Error);
+        }
+
+        return Ok(emailBots.Value);
+    }
+    
+    [HttpGet("get-conversations")]
+    public async Task<IActionResult> GetConversations()
+    {
+        if (CompanyId.IsFailure)
+        {
+            return BadRequest(CompanyId.Error);
+        }
+
+        if (CompanyId.Value <= 0)
+        {
+            return BadRequest("CompanyId cannot be less than or equal to 0");
+        }
+        
+        var conversations = await _emailConversationsRepository.GetByCompanyIdAsync<EmailConversationWithMessagesDto>(CompanyId.Value);
+        return Ok(conversations);
+    }
+    
     [HttpPost("event-on-message-received")]
     public async Task<IActionResult> EventOnMessageReceived()
     {
@@ -138,7 +177,7 @@ public class EmailController : BaseController
             return BadRequest(result.Error);
         }
         
-        var messages = await _emailConversationsRepository.GetAllAsync<EmailConversationWithMessagesDto>();
+        var messages = await _emailConversationsRepository.GetByCompanyIdAsync<EmailConversationWithMessagesDto>(CompanyId.Value);
 
         return Ok(messages);
     }

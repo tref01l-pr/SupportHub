@@ -147,4 +147,17 @@ public class EmailBotsService : IEmailBotsService
             return Result.Failure<TProjectTo>(e.Message);
         }
     }
+
+    public async Task<Result<List<TProjectTo>>> GetByCompanyIdAsync<TProjectTo>(int companyIdValue)
+    {
+        try
+        {
+            var deleteResult = await _emailBotsRepository.GetByCompanyIdAsync<TProjectTo>(companyIdValue);
+            return deleteResult;
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<List<TProjectTo>>(e.Message);
+        }
+    }
 }

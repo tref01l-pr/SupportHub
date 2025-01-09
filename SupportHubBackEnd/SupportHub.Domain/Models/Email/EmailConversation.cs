@@ -10,6 +10,7 @@ public class EmailConversation
     public int EmailRequesterId { get; set; }
     public string MsgId { get; set; }
     public string Subject { get; set; }
+    public DateTimeOffset LastUpdateDate { get; set; }
 
     private EmailConversation(
         int id,
@@ -17,7 +18,8 @@ public class EmailConversation
         int emailBotId,
         int emailRequesterId,
         string msgId,
-        string subject)
+        string subject,
+        DateTimeOffset lastUpdateDate)
     {
         Id = id;
         CompanyId = companyId;
@@ -25,6 +27,7 @@ public class EmailConversation
         EmailRequesterId = emailRequesterId;
         MsgId = msgId;
         Subject = subject;
+        LastUpdateDate = lastUpdateDate;
     }
 
     public static Result<EmailConversation> Create(
@@ -32,7 +35,8 @@ public class EmailConversation
         int emailBotId,
         int emailRequesterId,
         string msgId,
-        string subject)
+        string subject,
+        DateTimeOffset lastUpdateDate)
     {
         Result failure = Result.Success();
 
@@ -76,6 +80,6 @@ public class EmailConversation
             return Result.Failure<EmailConversation>(failure.Error);
         }
 
-        return new EmailConversation(0, companyId, emailBotId, emailRequesterId, msgId, subject);
+        return new EmailConversation(0, companyId, emailBotId, emailRequesterId, msgId, subject, lastUpdateDate);
     }
 }

@@ -492,7 +492,7 @@ public class MessagesService : IMessagesService
         var emailRequester = emailRequesterResult.Value;
 
         var newConversation = EmailConversation.Create(emailBot.CompanyId, emailBot.Id, emailRequester.Id,
-            message.MsgId, message.Subject);
+            message.MsgId, message.Subject, message.Date);
         if (newConversation.IsFailure)
         {
             return Result.Failure<EmailMessageDto>(newConversation.Error);

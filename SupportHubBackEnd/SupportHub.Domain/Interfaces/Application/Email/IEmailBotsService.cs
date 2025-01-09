@@ -10,4 +10,5 @@ public interface IEmailBotsService
     Task<Result<TProjectTo>> CreateAsync<TProjectTo>(EmailBot emailBot);
     Task<Result<TProjectTo>> UpdateAsync<TProjectTo>(EmailBot emailBot);
     Task<Result<TProjectTo>> DeleteAsync<TProjectTo>(int id);
+    Task<Result<List<TProjectTo>>> GetByCompanyIdAsync<TProjectTo>(int companyIdValue);
 }
