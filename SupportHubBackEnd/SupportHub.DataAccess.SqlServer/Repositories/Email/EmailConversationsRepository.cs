@@ -12,7 +12,7 @@ public class EmailConversationsRepository : IEmailConversationsRepository
 {
     private readonly SupportHubDbContext _context;
     private readonly IMapper _mapper;
-    
+
     private IConfigurationProvider _mapperConfig => _mapper.ConfigurationProvider;
 
     public EmailConversationsRepository(SupportHubDbContext context, IMapper mapper)
@@ -50,7 +50,7 @@ public class EmailConversationsRepository : IEmailConversationsRepository
         {
             throw new Exception("Something went wrong during save message");
         }
-        
+
         return _mapper.Map<EmailConversationEntity, TProjectTo>(newConversationEntity);
     }
 

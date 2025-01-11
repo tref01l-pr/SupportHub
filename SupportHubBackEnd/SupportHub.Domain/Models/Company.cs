@@ -40,6 +40,25 @@ public class Company
 
         return new Company(
             0,
-            name);
+            NormalizeName(name));
+    }
+
+    public static string NormalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return string.Empty;
+        }
+
+        var normalized = name.Trim().ToLower();
+
+        normalized = normalized.Replace("_", "-").Replace(" ", "-");
+
+        while (normalized.Contains("--"))
+        {
+            normalized = normalized.Replace("--", "-");
+        }
+
+        return normalized;
     }
 }

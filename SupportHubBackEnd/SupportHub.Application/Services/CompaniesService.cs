@@ -1,6 +1,7 @@
 ﻿using CSharpFunctionalExtensions;
 using SupportHub.Domain.Interfaces.Application;
 using SupportHub.Domain.Interfaces.DataAccess;
+using SupportHub.Domain.Models;
 
 namespace SupportHub.Application.Services;
 
@@ -27,12 +28,12 @@ public class CompaniesService : ICompaniesService
             return Result.Failure<TProjectTo>($"Error getting company by id: {e.Message}");
         }
     }
-    
+
     public async Task<Result<TProjectTo?>> GetByNameAsync<TProjectTo>(string name)
     {
         try
         {
-            var company = await _companyRepository.GetByNameAsync<TProjectTo>(name);
+            var company = await _companyRepository.GetByNameAsync<TProjectTo>(Company.NormalizeName(name));
 
             return company;
         }

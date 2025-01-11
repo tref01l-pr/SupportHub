@@ -133,30 +133,6 @@ public class MessagesService : IMessagesService
         }
     }
 
-    public async Task<Result> SendTestEmailMessageAsync(int emailSmtpId, string message, string to)
-    {
-        try
-        {
-            var emailBot = await _emailBotsRepository.GetByIdAsync<EmailBotDto>(emailSmtpId);
-            if (emailBot == null)
-            {
-                throw new Exception("Email bot not found");
-            }
-
-            var sendResult = await _emailSmtpService.SendMessageAsync(emailBot, "Test message", message, to);
-            if (sendResult.IsFailure)
-            {
-                throw new Exception(sendResult.Error);
-            }
-
-            return Result.Success();
-        }
-        catch (Exception e)
-        {
-            return Result.Failure(e.Message);
-        }
-    }
-
 
     //TODO make here a request to redis
     public async Task<Result<List<TProjectTo>>> GetLastConversationsByCompanyIdAsync<TProjectTo>(int companyId)
@@ -173,17 +149,31 @@ public class MessagesService : IMessagesService
         }*/
         try
         {
-            var receivedMessageFromQuestionEmails = await _emailConversationsRepository.GetLastByCompanyIdAsync<TProjectTo>(companyId);
+            var receivedMessageFromQuestionEmails =
+                await _emailConversationsRepository.GetLastByCompanyIdAsync<TProjectTo>(companyId);
             if (!receivedMessageFromQuestionEmails.Any())
             {
                 throw new Exception("Received messages not found");
             }
-        
+
             return receivedMessageFromQuestionEmails;
         }
         catch (Exception e)
         {
             return Result.Failure<List<TProjectTo>>(e.Message);
+        }
+    }
+
+    public async Task<Result<TProjectTo?>> GetConversationById<TProjectTo>(int conversationId)
+    {
+        try
+        {
+            var result = await _emailConversationsRepository.GetByIdAsync<TProjectTo>(conversationId);
+            return result;
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<TProjectTo?>(e.Message);
         }
     }
 
@@ -266,7 +256,7 @@ public class MessagesService : IMessagesService
         {
             return Result.Failure(messagesByCount.Error);
         }
-        
+
         return await ProcessEmailMessages(
             newMessagesFromEmailBot.Value
                 .Concat(messagesByCount.Value)

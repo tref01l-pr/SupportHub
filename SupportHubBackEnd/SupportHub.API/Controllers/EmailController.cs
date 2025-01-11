@@ -51,7 +51,8 @@ public class EmailController : BaseController
             return BadRequest("Incorrect UserId. It cannot be empty");
         }
 
-        var sentMessage = await _messagesService.SendEmailMessageAsync(request.EmailConversationId, CompanyId.Value, request.Body, UserId.Value);
+        var sentMessage = await _messagesService.SendEmailMessageAsync(request.EmailConversationId, CompanyId.Value,
+            request.Body, UserId.Value);
         if (sentMessage.IsFailure)
         {
             _logger.LogError("{errors}", sentMessage.Error);
@@ -61,8 +62,7 @@ public class EmailController : BaseController
         return Ok("Message was sent))");
     }
 
-    //TODO Remake this method to use database for taking massages
-    [HttpGet("get-last-messages")]
+    [HttpGet("get-last-conversations-by-companyId")]
     public async Task<IActionResult> GetLastMessages()
     {
         if (CompanyId.IsFailure)
@@ -74,8 +74,11 @@ public class EmailController : BaseController
         {
             return BadRequest("CompanyId cannot be less than or equal to 0");
         }
-        
-        var resultMessages = await _messagesService.GetLastConversationsByCompanyIdAsync<EmailConversationWithLastUpdateMessagesDto>(CompanyId.Value);
+
+        var resultMessages =
+            await _messagesService.GetLastConversationsByCompanyIdAsync<EmailConversationWithLastUpdateMessagesDto>(
+                CompanyId.Value);
+
         if (resultMessages.IsFailure)
         {
             return BadRequest(resultMessages.Error);
@@ -84,6 +87,38 @@ public class EmailController : BaseController
         return Ok(resultMessages.Value);
     }
     
+    [HttpGet("get-conversation-by-id")]
+    public async Task<IActionResult> GetConversationById(int id)
+    {
+        if (CompanyId.IsFailure)
+        {
+            return BadRequest(CompanyId.Error);
+        }
+
+        if (CompanyId.Value <= 0)
+        {
+            return BadRequest("CompanyId cannot be less than or equal to 0");
+        }
+        
+        var conversation = await _messagesService.GetConversationById<EmailConversationWithMessagesDto>(id);
+        if (conversation.IsFailure)
+        {
+            return BadRequest(conversation.Error);
+        }
+        
+        if (conversation.Value == null)
+        {
+            return BadRequest("Conversation not found");
+        }
+
+        if (conversation.Value.CompanyId != CompanyId.Value)
+        {
+            return BadRequest("Conversation not found");
+        }
+
+        return Ok(conversation.Value);
+    }
+
     [HttpPost("create-email-bot")]
     public async Task<IActionResult> CreateEmailBot([FromBody] CreateEmailBotRequest botRequest)
     {
@@ -122,19 +157,6 @@ public class EmailController : BaseController
         return Ok(creationResult.Value);
     }
 
-    //TODO Delete this method
-    [HttpPost("send-test-message")]
-    public async Task<IActionResult> SendTestMessage([FromBody] SendTestEmailRequest request)
-    {
-        var sentMessage = await _messagesService.SendTestEmailMessageAsync(request.SmtpId, request.Message, request.Email);
-        if (sentMessage.IsFailure)
-        {
-            return BadRequest(sentMessage.Error);
-        }
-        
-        return Ok("Message was sent))");
-    }
-    
     [HttpGet("get-email-bots")]
     public async Task<IActionResult> GetEmailBots()
     {
@@ -147,7 +169,7 @@ public class EmailController : BaseController
         {
             return BadRequest("CompanyId cannot be less than or equal to 0");
         }
-        
+
         var emailBots = await _emailBotsService.GetByCompanyIdAsync<EmailBotDto>(CompanyId.Value);
         if (emailBots.IsFailure)
         {
@@ -156,7 +178,7 @@ public class EmailController : BaseController
 
         return Ok(emailBots.Value);
     }
-    
+
     [HttpGet("get-conversations")]
     public async Task<IActionResult> GetConversations()
     {
@@ -169,25 +191,26 @@ public class EmailController : BaseController
         {
             return BadRequest("CompanyId cannot be less than or equal to 0");
         }
-        
-        var conversations = await _emailConversationsRepository.GetByCompanyIdAsync<EmailConversationWithMessagesDto>(CompanyId.Value);
+
+        var conversations = await _emailConversationsRepository.GetAllAsync<EmailConversationWithMessagesDto>();
         return Ok(conversations);
     }
-    
+
     [HttpPost("event-on-message-received")]
     public async Task<IActionResult> EventOnMessageReceived()
     {
         //get messageId from event
         //get message from romanListSender
         //get new messages from imap for this emailBot
-        
+
         var result = await _messagesService.EventOnMessageReceivedAsync(_imapOptions);
         if (result.IsFailure)
         {
             return BadRequest(result.Error);
         }
-        
-        var messages = await _emailConversationsRepository.GetByCompanyIdAsync<EmailConversationWithMessagesDto>(CompanyId.Value);
+
+        var messages =
+            await _emailConversationsRepository.GetByCompanyIdAsync<EmailConversationWithMessagesDto>(CompanyId.Value);
 
         return Ok(messages);
     }
