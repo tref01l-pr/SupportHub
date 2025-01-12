@@ -5,9 +5,9 @@ namespace SupportHub.API;
 
 public class UserInformation
 {
-    public UserInformation(string nickname, Guid userId, string role, int companyId, string companyName)
+    public UserInformation(string userName, Guid userId, string role, int companyId, string companyName)
     {
-        Nickname = nickname;
+        UserName = userName;
         UserId = userId;
         Role = role;
         CompanyId = companyId;
@@ -15,7 +15,7 @@ public class UserInformation
     }
 
     [JsonProperty(ClaimTypes.Name)]
-    public string Nickname { get; init; }
+    public string UserName { get; init; }
 
     [JsonProperty(ClaimTypes.NameIdentifier)]
     public Guid UserId { get; init; }

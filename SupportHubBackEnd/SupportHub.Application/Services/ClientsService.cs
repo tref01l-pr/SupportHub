@@ -16,7 +16,7 @@ public class ClientsService : IClientMessagesService
 
     public async Task<Result<User>> GetUserInfoAsync(Guid userId)
     {
-        var user = await _usersRepository.GetByIdAsync(userId);
+        var user = await _usersRepository.GetByIdAsync<User>(userId);
 
         if (user is null)
         {

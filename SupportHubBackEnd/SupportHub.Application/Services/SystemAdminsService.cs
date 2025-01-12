@@ -21,7 +21,7 @@ public class SystemAdminsService : ISystemAdminsService
 
     public async Task<Result<User>> GetByIdAsync(Guid id)
     {
-        var user = await _usersRepository.GetByIdAsync(id);
+        var user = await _usersRepository.GetByIdAsync<User>(id);
 
         if (user is null)
         {

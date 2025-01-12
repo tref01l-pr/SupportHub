@@ -98,6 +98,7 @@ public class Program
         builder.Services.AddScoped<IEmailBotsRepository, EmailBotsRepository>();
         
         builder.Services.AddScoped<IMessagesService, MessagesService>();
+        builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IClientMessagesService, ClientsService>();
         builder.Services.AddScoped<IMessagesService, MessagesService>();
         builder.Services.AddScoped<ICompaniesService, CompaniesService>();

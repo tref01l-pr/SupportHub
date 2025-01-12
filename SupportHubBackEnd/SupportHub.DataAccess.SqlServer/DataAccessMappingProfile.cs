@@ -15,6 +15,7 @@ public class DataAccessMappingProfile : Profile
     public DataAccessMappingProfile()
     {
         CreateMap<UserEntity, User>().ReverseMap();
+        CreateMap<UserEntity, UserEntity>();
         CreateMap<SessionEntity, Session>().ReverseMap();
 
         CreateMap<CompanyEntity, Company>().ReverseMap();

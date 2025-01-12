@@ -8,8 +8,12 @@ using SupportHub.API.Contracts;
 using SupportHub.DataAccess.SqlServer.Entities;
 using SupportHub.Domain.Interfaces.Application;
 using SupportHub.Domain.Interfaces.DataAccess;
+using SupportHub.Domain.Interfaces.Infrastructure;
 using SupportHub.Domain.Models;
 using SupportHub.Domain.Options;
+using ForgotPasswordRequest = SupportHub.API.Contracts.ForgotPasswordRequest;
+using LoginRequest = SupportHub.API.Contracts.LoginRequest;
+using ResetPasswordRequest = SupportHub.API.Contracts.ResetPasswordRequest;
 
 namespace SupportHub.API.Controllers;
 
@@ -17,31 +21,40 @@ public class UsersAccountController : BaseController
 {
     private readonly ILogger _logger;
     private readonly JWTSecretOptions _options;
+    private readonly SmtpOptions _smtpOptions;
     private readonly UserManager<UserEntity> _userManager;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly ISessionsRepository _sessionsRepository;
     private readonly ITransactionsRepository _transactionsRepository;
     private readonly ICompaniesService _companiesService;
     private readonly ICompaniesRepository _companyRepository;
+    private readonly IEmailSmtpService _emailSmtpService;
+    private readonly IUsersService _usersService;
 
     public UsersAccountController(
         ILogger<UsersAccountController> logger,
         IOptions<JWTSecretOptions> options,
+        IOptions<SmtpOptions> smtpOptions,
         UserManager<UserEntity> userManager,
         RoleManager<IdentityRole<Guid>> roleManager,
         ITransactionsRepository transactionsRepository,
         ISessionsRepository sessionsRepository,
         ICompaniesService companiesService,
-        ICompaniesRepository companyRepository)
+        ICompaniesRepository companyRepository,
+        IEmailSmtpService emailSmtpService,
+        IUsersService usersService)
     {
         _logger = logger;
         _options = options.Value;
+        _smtpOptions = smtpOptions.Value;
         _userManager = userManager;
         _roleManager = roleManager;
         _sessionsRepository = sessionsRepository;
         _transactionsRepository = transactionsRepository;
         _companiesService = companiesService;
         _companyRepository = companyRepository;
+        _emailSmtpService = emailSmtpService;
+        _usersService = usersService;
     }
 
     [AllowAnonymous]
@@ -139,7 +152,7 @@ public class UsersAccountController : BaseController
         {
             throw new Exception("Company with such name does not exist.");
         }
-        
+
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is not null)
         {
@@ -147,7 +160,7 @@ public class UsersAccountController : BaseController
             _logger.LogError("{error}", error);
             return BadRequest(error);
         }
-        
+
         var newUser = new UserEntity
         {
             UserName = request.Email,
@@ -192,56 +205,64 @@ public class UsersAccountController : BaseController
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> LogIn([FromRoute] string companyName, [FromBody] LoginRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null)
+        var companyExistResult = await _companiesService.GetByNameAsync<Company>(companyName);
+        if (companyExistResult.IsFailure)
         {
-            return BadRequest("Email not found.");
+            return BadRequest(companyExistResult.Error);
         }
 
-        var company = await _companyRepository.GetByIdAsync<Company>(user.CompanyId);
-        if (company.Name != companyName)
+        if (companyExistResult.Value == null)
         {
-            return BadRequest("User does not exist.");
+            return BadRequest("Company not found.");
+        }
+
+        var userResult =
+            await _usersService.GetByEmailAndCompanyIdAsync<UserEntity>(request.Email, companyExistResult.Value.Id);
+
+        if (userResult.IsFailure)
+        {
+            return BadRequest(userResult.Error);
+        }
+
+        if (userResult.Value is null)
+        {
+            return BadRequest("User not found.");
+        }
+
+        if (companyExistResult.Value.Id != userResult.Value.CompanyId)
+        {
+            return BadRequest("User does not belong to this company.");
         }
 
         var isSuccess = await _userManager
-            .CheckPasswordAsync(user, request.Password);
+            .CheckPasswordAsync(userResult.Value, request.Password);
 
         if (!isSuccess)
         {
             return BadRequest("Password is incorrect.");
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _userManager.GetRolesAsync(userResult.Value);
         var role = roles.FirstOrDefault();
         if (role is null)
         {
             return BadRequest("Role isn't exist.");
         }
-        
-        var companyInfo = await _companiesService.GetByIdAsync<Company>(company.Id);
-        if (companyInfo.IsFailure)
-        {
-            return BadRequest(companyInfo.Error);
-        }
 
-        if (companyInfo.Value is null)
-        {
-            return BadRequest("Company not found.");
-        }
-
-        var userInformation = new UserInformation(user.UserName, user.Id, role, companyInfo.Value.Id, companyInfo.Value.Name);
+        var userInformation =
+            new UserInformation(userResult.Value.UserName, userResult.Value.Id, role, companyExistResult.Value.Id,
+                companyExistResult.Value.Name);
         var accessToken = JwtHelper.CreateAccessToken(userInformation, _options);
         var refreshToken = JwtHelper.CreateRefreshToken(userInformation, _options);
 
         //TODO возможно не нужно юзать сессии
-        var session = Session.Create(user.Id, accessToken, refreshToken);
+        var session = Session.Create(userResult.Value.Id, accessToken, refreshToken);
         if (session.IsFailure)
         {
             _logger.LogError("{error}", session.Error);
             return BadRequest(session.Error);
         }
-        
+
         var result = await _sessionsRepository.Create(session.Value);
 
         if (result.IsFailure)
@@ -259,12 +280,114 @@ public class UsersAccountController : BaseController
 
         return Ok(new TokenResponse
         {
-            Id = user.Id,
+            Id = userResult.Value.Id,
             Role = role,
             AccessToken = accessToken,
-            Nickname = user.UserName,
-            Email = user.Email,
+            Nickname = userResult.Value.UserName,
+            Email = userResult.Value.Email,
         });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("/{companyName}/forgot-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgetPassword([FromRoute] string companyName,
+        [FromBody] ForgotPasswordRequest request)
+    {
+        var companyExistResult = await _companiesService.GetByNameAsync<Company>(companyName);
+        if (companyExistResult.IsFailure)
+        {
+            return BadRequest(companyExistResult.Error);
+        }
+
+        if (companyExistResult.Value == null)
+        {
+            return BadRequest("Company not found.");
+        }
+
+        var userResult =
+            await _usersService.GetByEmailAndCompanyIdAsync<UserEntity>(request.Email, companyExistResult.Value.Id);
+
+        if (userResult.IsFailure)
+        {
+            return BadRequest(userResult.Error);
+        }
+
+        if (userResult.Value is null)
+        {
+            return BadRequest("User not found.");
+        }
+
+        var userRoles = await _userManager.GetRolesAsync(userResult.Value);
+
+        /*if (!(userRoles.Contains(nameof(Roles.Owner)) || userRoles.Contains(nameof(Roles.SystemAdmin))))
+        {
+            return BadRequest("User is not owner or system admin.");
+        }*/
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(userResult.Value);
+
+        var emailResult =
+            await _emailSmtpService.SendForgetPasswordToken(_smtpOptions, userResult.Value.Email, token, request.ReturnUrl, userResult.Value.Id);
+
+        if (emailResult.IsFailure)
+        {
+            return BadRequest(emailResult.Error);
+        }
+
+        return Ok("Message was send. Check your email.");
+    }
+
+    [AllowAnonymous]
+    [HttpPost("/{companyName}/reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromRoute] string companyName,
+        [FromBody] ResetPasswordRequest request)
+    {
+        var companyExistResult = await _companiesService.GetByNameAsync<Company>(companyName);
+        if (companyExistResult.IsFailure)
+        {
+            return BadRequest(companyExistResult.Error);
+        }
+
+        if (companyExistResult.Value == null)
+        {
+            return BadRequest("Company not found.");
+        }
+        
+        var userResult =
+            await _usersService.GetById<UserEntity>(request.Id);
+
+        if (userResult.IsFailure)
+        {
+            return BadRequest(userResult.Error);
+        }
+        
+        if (userResult.Value is null)
+        {
+            return BadRequest("User not found.");
+        }
+        
+        var userRoles = await _userManager.GetRolesAsync(userResult.Value);
+        /*if (!(userRoles.Contains(nameof(Roles.Owner)) || userRoles.Contains(nameof(Roles.SystemAdmin))))
+        {
+            return BadRequest("User is not owner or system admin.");
+        }*/
+
+        if (userResult.Value.CompanyId != companyExistResult.Value.Id)
+        {
+            return BadRequest("User does not belong to this company.");
+        }
+        
+        var result = await _userManager.ResetPasswordAsync(userResult.Value, request.Token, request.Password);
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors);
+        }
+        
+        return Ok("Password was reset.");
     }
 
     /// <summary>
@@ -346,7 +469,7 @@ public class UsersAccountController : BaseController
             Id = userInformation.Value.UserId,
             Role = userInformation.Value.Role,
             AccessToken = accessToken,
-            Nickname = userInformation.Value.Nickname,
+            Nickname = userInformation.Value.UserName,
             Email = user.Email,
         });
     }

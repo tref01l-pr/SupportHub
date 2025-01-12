@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using CSharpFunctionalExtensions;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SupportHub.DataAccess.SqlServer.Entities;
 using SupportHub.Domain.Interfaces.DataAccess;
@@ -12,6 +12,8 @@ public class UsersRepository : IUsersRepository
     private readonly SupportHubDbContext _context;
     private readonly IMapper _mapper;
 
+    private IConfigurationProvider _mapperConfig => _mapper.ConfigurationProvider;
+
     public UsersRepository(
         SupportHubDbContext context,
         IMapper mapper)
@@ -20,19 +22,18 @@ public class UsersRepository : IUsersRepository
         _mapper = mapper;
     }
 
-    public async Task<User?> GetByIdAsync(Guid id)
+    public async Task<TProjectTo?> GetByIdAsync<TProjectTo>(Guid id) where TProjectTo : class
     {
         var userEntity = await _context.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .Where(x => x.Id == id)
+            .FirstOrDefaultAsync();
 
-        if (userEntity is null)
+        if (typeof(TProjectTo) == typeof(UserEntity))
         {
-            return null;
+            return userEntity as TProjectTo;
         }
 
-        var user = _mapper.Map<UserEntity, User>(userEntity);
-        return user;
+        return _mapper.Map<TProjectTo>(userEntity);
     }
 
     public async Task<User[]> GetByIdsAsync(IEnumerable<Guid> userIds)
@@ -44,6 +45,20 @@ public class UsersRepository : IUsersRepository
 
         var users = _mapper.Map<UserEntity[], User[]>(usersEntity);
         return users;
+    }
+
+    public async Task<TProjectTo?> GetByEmailAsync<TProjectTo>(string email, int companyId) where TProjectTo : class
+    {
+        var userEntity = await _context.Users
+            .Where(x => x.Email == email && x.CompanyId == companyId)
+            .FirstOrDefaultAsync();
+
+        if (typeof(TProjectTo) == typeof(UserEntity))
+        {
+            return userEntity as TProjectTo;
+        }
+
+        return _mapper.Map<TProjectTo>(userEntity);
     }
 
     public async Task<User[]> GetAsync()
