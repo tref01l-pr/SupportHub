@@ -29,12 +29,11 @@ public class CompaniesService : ICompaniesService
         }
     }
 
-    public async Task<Result<TProjectTo?>> GetByNameAsync<TProjectTo>(string name)
+    public async Task<Result<TProjectTo?>> GetByUrlAsync<TProjectTo>(string url)
     {
         try
         {
-            var company = await _companyRepository.GetByNameAsync<TProjectTo>(Company.NormalizeName(name));
-
+            var company = await _companyRepository.GetByUrlAsync<TProjectTo>(url);
             return company;
         }
         catch (Exception e)

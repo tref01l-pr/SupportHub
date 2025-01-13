@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SupportHub.DataAccess.SqlServer;
 
@@ -11,9 +12,11 @@ using SupportHub.DataAccess.SqlServer;
 namespace SupportHub.DataAccess.SqlServer.Migrations
 {
     [DbContext(typeof(SupportHubDbContext))]
-    partial class SupportHubDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250113050548_AddCompanyUrl")]
+    partial class AddCompanyUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -167,12 +170,9 @@ namespace SupportHub.DataAccess.SqlServer.Migrations
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Url")
-                        .IsUnique();
 
                     b.ToTable("Companies");
                 });

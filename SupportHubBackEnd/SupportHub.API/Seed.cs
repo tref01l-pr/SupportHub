@@ -35,17 +35,15 @@ public class Seed
     {
         try
         {
-            var companyEntity = _context.Companies.FirstOrDefault(c => c.Name == "SupportHub");
+            var companyEntity = _context.Companies.FirstOrDefault(c => c.Url == "support-hub");
             if (companyEntity is null)
             {
-                var company = Company.Create("SupportHub");
+                var company = Company.Create("SupportHub", string.Empty);
                 var result = await _context.Companies.AddAsync(_mapper.Map<Company, CompanyEntity>(company.Value));
                 companyEntity = result.Entity;
                 await _context.SaveChangesAsync();
             }
-            
-            var companySupportHub = _context.Companies.FirstOrDefault(c => c.Name == "SupportHub");
-            
+
             if (_context.Users.FirstOrDefault(u => u.UserName == "systemadmin") is null)
             {
                 var mailSystemAdmin = new UserEntity
@@ -82,7 +80,7 @@ public class Seed
                 {
                     UserName = "user",
                     Email = "user@user.user",
-                    CompanyId = companySupportHub!.Id,
+                    CompanyId = companyEntity!.Id,
                 };
 
                 var result = await _userManager.CreateAsync(mailSystemAdmin, "string");
@@ -114,7 +112,7 @@ public class Seed
             throw;
         }
     }
-    
+
     /*if (!_context.ReceivedMessages.Any())
             {
                 var newMessages = await _imapService.GetNewMessages(_imapOptions, 0);

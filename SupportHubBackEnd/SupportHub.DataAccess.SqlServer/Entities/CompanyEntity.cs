@@ -8,6 +8,7 @@ public class CompanyEntity
 {
     public int Id { get; set; }
     public string Name { get; set; }
+    public string Url { get; set; }
     public virtual ICollection<EmailBotEntity> EmailBots { get; set; }
     public virtual ICollection<UserEntity> Users { get; set; }
     public virtual ICollection<EmailConversationEntity> EmailConversations { get; set; }
@@ -21,5 +22,11 @@ public class CompanyEntityConfiguration : IEntityTypeConfiguration<CompanyEntity
 
         builder.Property(x => x.Name)
             .IsRequired(true);
+
+        builder.Property(x => x.Url)
+            .IsRequired(true);
+        
+        builder.HasIndex(msg => msg.Url)
+            .IsUnique();
     }
 }

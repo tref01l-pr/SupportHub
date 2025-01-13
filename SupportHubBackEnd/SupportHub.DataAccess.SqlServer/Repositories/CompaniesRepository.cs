@@ -27,10 +27,10 @@ public class CompaniesRepository : ICompaniesRepository
             .ProjectTo<TProjectTo>(_mapperConfig)
             .FirstOrDefaultAsync();
 
-    public async Task<TProjectTo?> GetByNameAsync<TProjectTo>(string companyName) =>
+    public async Task<TProjectTo?> GetByUrlAsync<TProjectTo>(string url) =>
         await _context.Companies
             .AsNoTracking()
-            .Where(company => company.Name == companyName)
+            .Where(company => company.Url == url)
             .ProjectTo<TProjectTo>(_mapperConfig)
             .FirstOrDefaultAsync();
 

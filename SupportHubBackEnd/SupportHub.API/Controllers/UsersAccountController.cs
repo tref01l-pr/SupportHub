@@ -72,15 +72,15 @@ public class UsersAccountController : BaseController
                 throw new Exception(beginTransactionResult.Error);
             }
 
-            if ((await _companiesService.GetByNameAsync<Company>(request.CompanyName)).Value != null)
-            {
-                throw new Exception("Company with such name is already existing.");
-            }
-
-            var companyResult = Company.Create(request.CompanyName);
+            var companyResult = Company.Create(request.CompanyName, string.Empty);
             if (companyResult.IsFailure)
             {
                 throw new Exception(companyResult.Error);
+            }
+
+            if ((await _companiesService.GetByUrlAsync<Company>(companyResult.Value.Url)).Value != null)
+            {
+                throw new Exception("Company with such name is already existing. Try to use another name.");
             }
 
             var companyCreationResult = await _companyRepository.CreateAsync(companyResult.Value);
@@ -147,10 +147,16 @@ public class UsersAccountController : BaseController
         [FromRoute] string companyName,
         [FromBody] UserRegistrationRequest request)
     {
-        var company = await _companyRepository.GetByNameAsync<Company>(companyName);
-        if (company == null)
+        var company = await _companiesService.GetByUrlAsync<Company>(companyName);
+
+        if (company.IsFailure)
         {
-            throw new Exception("Company with such name does not exist.");
+            return BadRequest(company.Error);
+        }
+
+        if (company.Value == null)
+        {
+            return BadRequest("Company with such name does not exist.");
         }
 
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -165,7 +171,7 @@ public class UsersAccountController : BaseController
         {
             UserName = request.Email,
             Email = request.Email,
-            CompanyId = company.Id
+            CompanyId = company.Value.Id,
         };
 
         var result = await _userManager.CreateAsync(
@@ -200,12 +206,12 @@ public class UsersAccountController : BaseController
     /// <param name="request">Email and password.</param>
     /// <returns>Jwt token.</returns>
     [AllowAnonymous]
-    [HttpPost("/{companyName}/login")]
+    [HttpPost("/{companyUrl}/login")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TokenResponse))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> LogIn([FromRoute] string companyName, [FromBody] LoginRequest request)
+    public async Task<IActionResult> LogIn([FromRoute] string companyUrl, [FromBody] LoginRequest request)
     {
-        var companyExistResult = await _companiesService.GetByNameAsync<Company>(companyName);
+        var companyExistResult = await _companiesService.GetByUrlAsync<Company>(companyUrl);
         if (companyExistResult.IsFailure)
         {
             return BadRequest(companyExistResult.Error);
@@ -289,13 +295,13 @@ public class UsersAccountController : BaseController
     }
 
     [AllowAnonymous]
-    [HttpPost("/{companyName}/forgot-password")]
+    [HttpPost("/{companyUrl}/forgot-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ForgetPassword([FromRoute] string companyName,
+    public async Task<IActionResult> ForgetPassword([FromRoute] string companyUrl,
         [FromBody] ForgotPasswordRequest request)
     {
-        var companyExistResult = await _companiesService.GetByNameAsync<Company>(companyName);
+        var companyExistResult = await _companiesService.GetByUrlAsync<Company>(companyUrl);
         if (companyExistResult.IsFailure)
         {
             return BadRequest(companyExistResult.Error);
@@ -329,7 +335,8 @@ public class UsersAccountController : BaseController
         var token = await _userManager.GeneratePasswordResetTokenAsync(userResult.Value);
 
         var emailResult =
-            await _emailSmtpService.SendForgetPasswordToken(_smtpOptions, userResult.Value.Email, token, request.ReturnUrl, userResult.Value.Id);
+            await _emailSmtpService.SendForgetPasswordToken(_smtpOptions, userResult.Value.Email, token,
+                request.ReturnUrl, userResult.Value.Id);
 
         if (emailResult.IsFailure)
         {
@@ -340,13 +347,14 @@ public class UsersAccountController : BaseController
     }
 
     [AllowAnonymous]
-    [HttpPost("/{companyName}/reset-password")]
+    [HttpPost("/{companyUrl}/reset-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromRoute] string companyName,
+    public async Task<IActionResult> ResetPassword(
+        [FromRoute] string companyUrl,
         [FromBody] ResetPasswordRequest request)
     {
-        var companyExistResult = await _companiesService.GetByNameAsync<Company>(companyName);
+        var companyExistResult = await _companiesService.GetByUrlAsync<Company>(companyUrl);
         if (companyExistResult.IsFailure)
         {
             return BadRequest(companyExistResult.Error);
@@ -356,7 +364,7 @@ public class UsersAccountController : BaseController
         {
             return BadRequest("Company not found.");
         }
-        
+
         var userResult =
             await _usersService.GetById<UserEntity>(request.Id);
 
@@ -364,12 +372,12 @@ public class UsersAccountController : BaseController
         {
             return BadRequest(userResult.Error);
         }
-        
+
         if (userResult.Value is null)
         {
             return BadRequest("User not found.");
         }
-        
+
         var userRoles = await _userManager.GetRolesAsync(userResult.Value);
         /*if (!(userRoles.Contains(nameof(Roles.Owner)) || userRoles.Contains(nameof(Roles.SystemAdmin))))
         {
@@ -380,13 +388,13 @@ public class UsersAccountController : BaseController
         {
             return BadRequest("User does not belong to this company.");
         }
-        
+
         var result = await _userManager.ResetPasswordAsync(userResult.Value, request.Token, request.Password);
         if (!result.Succeeded)
         {
             return BadRequest(result.Errors);
         }
-        
+
         return Ok("Password was reset.");
     }
 
