@@ -86,7 +86,7 @@ public class EmailController : BaseController
 
         return Ok(resultMessages.Value);
     }
-    
+
     [HttpGet("get-conversation-by-id")]
     public async Task<IActionResult> GetConversationById(int id)
     {
@@ -99,13 +99,13 @@ public class EmailController : BaseController
         {
             return BadRequest("CompanyId cannot be less than or equal to 0");
         }
-        
+
         var conversation = await _messagesService.GetConversationById<EmailConversationWithMessagesDto>(id);
         if (conversation.IsFailure)
         {
             return BadRequest(conversation.Error);
         }
-        
+
         if (conversation.Value == null)
         {
             return BadRequest("Conversation not found");
@@ -155,6 +155,96 @@ public class EmailController : BaseController
         }
 
         return Ok(creationResult.Value);
+    }
+
+    [HttpPut("update-email-bot")]
+    public async Task<IActionResult> UpdateEmailBot([FromBody] UpdateBotRequest updateBotRequest)
+    {
+        if (CompanyId.IsFailure)
+        {
+            return BadRequest(CompanyId.Error);
+        }
+
+        if (CompanyId.Value <= 0)
+        {
+            return BadRequest("CompanyId cannot be less than or equal to 0");
+        }
+
+        var emailBotExists = await _emailBotsService.GetByIdAsync<EmailBot>(updateBotRequest.Id);
+        if (emailBotExists.IsFailure)
+        {
+            return BadRequest(emailBotExists.Error);
+        }
+
+        if (emailBotExists.Value == null)
+        {
+            return BadRequest("Email bot not found");
+        }
+
+        if (emailBotExists.Value.CompanyId != CompanyId.Value)
+        {
+            return BadRequest("Email bot not found");
+        }
+
+        var emailBot = EmailBot.Create(
+            CompanyId.Value,
+            emailBotExists.Value.Email,
+            updateBotRequest.Password,
+            updateBotRequest.SmtpPort,
+            updateBotRequest.SmtpHost,
+            updateBotRequest.ImapPort,
+            updateBotRequest.ImapHost);
+
+        if (emailBot.IsFailure)
+        {
+            return BadRequest(emailBot.Error);
+        }
+
+        var updateResult = await _emailBotsService.UpdateAsync<EmailBotDto>(emailBot.Value);
+        if (updateResult.IsFailure)
+        {
+            return BadRequest(updateResult.Error);
+        }
+
+        return Ok(updateResult.Value);
+    }
+    
+    [HttpDelete("delete-email-bot")]
+    public async Task<IActionResult> DeleteEmailBot(int id)
+    {
+        if (CompanyId.IsFailure)
+        {
+            return BadRequest(CompanyId.Error);
+        }
+
+        if (CompanyId.Value <= 0)
+        {
+            return BadRequest("CompanyId cannot be less than or equal to 0");
+        }
+
+        var emailBotExists = await _emailBotsService.GetByIdAsync<EmailBot>(id);
+        if (emailBotExists.IsFailure)
+        {
+            return BadRequest(emailBotExists.Error);
+        }
+
+        if (emailBotExists.Value == null)
+        {
+            return BadRequest("Email bot not found");
+        }
+
+        if (emailBotExists.Value.CompanyId != CompanyId.Value)
+        {
+            return BadRequest("Email bot not found");
+        }
+
+        var deleteResult = await _emailBotsService.DeleteAsync<EmailBotDto>(id);
+        if (deleteResult.IsFailure)
+        {
+            return BadRequest(deleteResult.Error);
+        }
+
+        return Ok("Email bot was deleted");
     }
 
     [HttpGet("get-email-bots")]
