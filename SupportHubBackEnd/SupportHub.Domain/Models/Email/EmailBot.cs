@@ -88,7 +88,7 @@ public class EmailBot
             failure = Result.Combine(
                 failure,
                 Result.Failure<EmailBot>(
-                    $"EmailBot {nameof(smtpPassword)} can`t be more than {ImapMessage.MaxBodyLength} chars"));
+                    $"EmailBot {nameof(smtpPassword)} should be {PasswordLength} chars"));
         }
 
         if (smtpPort is <= 0 or > MaxPortLength)

@@ -14,7 +14,7 @@
         <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
         <PackageReference Include="Google.Apis.Core" Version="1.68.0" />
         <PackageReference Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
-        <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.13.0" />
+        <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.20.0" />
         <PackageReference Include="JWT" Version="11.0.0-beta2" />
         <PackageReference Include="JWT.Extensions.AspNetCore" Version="11.0.0-beta3" />
         <PackageReference Include="JWT.Extensions.DependencyInjection" Version="3.0.0-beta2" />
