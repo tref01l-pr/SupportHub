@@ -7,21 +7,21 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["MailBridgeSupport.API/MailBridgeSupport.API.csproj", "MailBridgeSupport.Api/"]
-COPY ["MailBridgeSupport.Application/MailBridgeSupport.Application.csproj", "MailBridgeSupport.Application/"]
-COPY ["MailBridgeSupport.DataAccess.SqlServer/MailBridgeSupport.DataAccess.SqlServer.csproj", "MailBridgeSupport.DataAccess.SqlServer/"]
-COPY ["MailBridgeSupport.Domain/MailBridgeSupport.Domain.csproj", "MailBridgeSupport.Domain/"]
-COPY ["MailBridgeSupport.Infrastructure/MailBridgeSupport.Infrastructure.csproj", "MailBridgeSupport.Infrastructure/"]
-RUN dotnet restore "MailBridgeSupport.Api/MailBridgeSupport.API.csproj"
+COPY ["SupportHub.API/SupportHub.API.csproj", "SupportHub.Api/"]
+COPY ["SupportHub.Application/SupportHub.Application.csproj", "SupportHub.Application/"]
+COPY ["SupportHub.DataAccess.SqlServer/SupportHub.DataAccess.SqlServer.csproj", "SupportHub.DataAccess.SqlServer/"]
+COPY ["SupportHub.Domain/SupportHub.Domain.csproj", "SupportHub.Domain/"]
+COPY ["SupportHub.Infrastructure/SupportHub.Infrastructure.csproj", "SupportHub.Infrastructure/"]
+RUN dotnet restore "SupportHub.Api/SupportHub.API.csproj"
 COPY . .
-WORKDIR "/src/MailBridgeSupport.API"
-RUN dotnet build "MailBridgeSupport.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/SupportHub.API"
+RUN dotnet build "SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "MailBridgeSupport.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "MailBridgeSupport.API.dll"]
+ENTRYPOINT ["dotnet", "SupportHub.API.dll"]

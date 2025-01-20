@@ -286,12 +286,14 @@ public class EmailController : BaseController
         return Ok(conversations);
     }
 
+    [AllowAnonymous]
     [HttpPost("event-on-message-received")]
     public async Task<IActionResult> EventOnMessageReceived()
     {
         //get messageId from event
         //get message from romanListSender
         //get new messages from imap for this emailBot
+        _logger.LogInformation("Event on message received");
 
         var result = await _messagesService.EventOnMessageReceivedAsync(_imapOptions);
         if (result.IsFailure)
@@ -299,9 +301,6 @@ public class EmailController : BaseController
             return BadRequest(result.Error);
         }
 
-        var messages =
-            await _emailConversationsRepository.GetByCompanyIdAsync<EmailConversationWithMessagesDto>(CompanyId.Value);
-
-        return Ok(messages);
+        return Ok("Success!");
     }
 }
