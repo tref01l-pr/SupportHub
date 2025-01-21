@@ -14,14 +14,14 @@ COPY ["SupportHubBackEnd/SupportHub.Domain/SupportHub.Domain.csproj", "SupportHu
 COPY ["SupportHubBackEnd/SupportHub.Infrastructure/SupportHub.Infrastructure.csproj", "SupportHub.Infrastructure/"]
 RUN dotnet restore "SupportHub.Api/SupportHub.API.csproj"
 COPY . .
-WORKDIR "/src/SupportHub.API"
-RUN dotnet build "SupportHub.API/SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/SupportHubBackEnd/SupportHub.API"
+RUN dotnet build "SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "SupportHub.API/SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "SupportHub.API/SupportHub.API.dll"]
+ENTRYPOINT ["dotnet", "SupportHub.API.dll"]
