@@ -12,7 +12,7 @@ COPY ["SupportHubBackEnd/SupportHub.Application/SupportHub.Application.csproj", 
 COPY ["SupportHubBackEnd/SupportHub.DataAccess.SqlServer/SupportHub.DataAccess.SqlServer.csproj", "SupportHub.DataAccess.SqlServer/"]
 COPY ["SupportHubBackEnd/SupportHub.Domain/SupportHub.Domain.csproj", "SupportHub.Domain/"]
 COPY ["SupportHubBackEnd/SupportHub.Infrastructure/SupportHub.Infrastructure.csproj", "SupportHub.Infrastructure/"]
-RUN dotnet restore "SupportHubBackEnd/SupportHub.Api/SupportHub.API.csproj"
+RUN dotnet restore "SupportHub.Api/SupportHub.API.csproj"
 COPY . .
 WORKDIR "/src/SupportHub.API"
 RUN dotnet build "SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
