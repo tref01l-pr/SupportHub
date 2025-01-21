@@ -23,7 +23,6 @@ public class MessagesService : IMessagesService
     private readonly ITransactionsRepository _transactionsRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IEmailMessagesRepository _emailMessagesRepository;
-    private readonly ICacheRepository _cacheRepository;
     private readonly IEmailRequestersRepository _emailRequesterRepository;
     private readonly IEmailConversationsRepository _emailConversationsRepository;
     private readonly IEmailBotsRepository _emailBotsRepository;
@@ -35,7 +34,6 @@ public class MessagesService : IMessagesService
         IUsersRepository usersRepository,
         ITransactionsRepository transactionsRepository,
         IEmailMessagesRepository emailMessagesRepository,
-        ICacheRepository cacheRepository,
         IEmailRequestersRepository emailRequestersRepository,
         IEmailConversationsRepository emailConversationsRepository,
         IEmailBotsRepository emailBotsRepository,
@@ -46,7 +44,6 @@ public class MessagesService : IMessagesService
         _usersRepository = usersRepository;
         _transactionsRepository = transactionsRepository;
         _emailMessagesRepository = emailMessagesRepository;
-        _cacheRepository = cacheRepository;
         _emailRequesterRepository = emailRequestersRepository;
         _emailConversationsRepository = emailConversationsRepository;
         _emailBotsRepository = emailBotsRepository;
@@ -532,16 +529,5 @@ public class MessagesService : IMessagesService
         }
 
         return newMessages;
-    }
-
-    public async Task<Result<bool>> RemoveKeyAsync()
-    {
-        var result = await _cacheRepository.RemoveKey();
-        if (result.IsFailure)
-        {
-            return Result.Failure<bool>(result.Error);
-        }
-
-        return result.Value;
     }
 }

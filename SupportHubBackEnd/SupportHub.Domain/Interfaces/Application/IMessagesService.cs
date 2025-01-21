@@ -13,5 +13,4 @@ public interface IMessagesService
     Task<Result<List<TProjectTo>>> GetLastConversationsByCompanyIdAsync<TProjectTo>(int companyId);
     Task<Result<TProjectTo?>> GetConversationById<TProjectTo>(int conversationId);
     Task<Result> EventOnMessageReceivedAsync(ImapOptions imapOptions);
-    Task<Result<bool>> RemoveKeyAsync();
 }

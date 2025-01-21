@@ -58,6 +58,13 @@ public class UsersAccountController : BaseController
     }
 
     [AllowAnonymous]
+    [HttpGet("hello")]
+    public IActionResult Hello()
+    {
+        return Ok("Hello");
+    }
+
+    [AllowAnonymous]
     [HttpPost("user-and-company-registration")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
