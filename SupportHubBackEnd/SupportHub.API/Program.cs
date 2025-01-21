@@ -160,11 +160,11 @@ public class Program
             }
         }
 
-        if (app.Environment.IsDevelopment())
-        {
+        /*if (app.Environment.IsDevelopment())
+        {*/
             app.UseSwagger();
             app.UseSwaggerUI();
-        }
+        /*}*/
 
         /*using (var scope = app.Services.CreateScope())
         {
