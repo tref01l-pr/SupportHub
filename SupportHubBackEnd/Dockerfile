@@ -7,12 +7,12 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["SupportHub.API/SupportHub.API.csproj", "SupportHub.Api/"]
-COPY ["SupportHub.Application/SupportHub.Application.csproj", "SupportHub.Application/"]
-COPY ["SupportHub.DataAccess.SqlServer/SupportHub.DataAccess.SqlServer.csproj", "SupportHub.DataAccess.SqlServer/"]
-COPY ["SupportHub.Domain/SupportHub.Domain.csproj", "SupportHub.Domain/"]
-COPY ["SupportHub.Infrastructure/SupportHub.Infrastructure.csproj", "SupportHub.Infrastructure/"]
-RUN dotnet restore "SupportHub.Api/SupportHub.API.csproj"
+COPY ["SupportHubBackEnd/SupportHub.API/SupportHub.API.csproj", "SupportHub.Api/"]
+COPY ["SupportHubBackEnd/SupportHub.Application/SupportHub.Application.csproj", "SupportHub.Application/"]
+COPY ["SupportHubBackEnd/SupportHub.DataAccess.SqlServer/SupportHub.DataAccess.SqlServer.csproj", "SupportHub.DataAccess.SqlServer/"]
+COPY ["SupportHubBackEnd/SupportHub.Domain/SupportHub.Domain.csproj", "SupportHub.Domain/"]
+COPY ["SupportHubBackEnd/SupportHub.Infrastructure/SupportHub.Infrastructure.csproj", "SupportHub.Infrastructure/"]
+RUN dotnet restore "SupportHubBackEnd/SupportHub.Api/SupportHub.API.csproj"
 COPY . .
 WORKDIR "/src/SupportHub.API"
 RUN dotnet build "SupportHub.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
