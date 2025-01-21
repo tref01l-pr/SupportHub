@@ -61,7 +61,7 @@ public class UsersAccountController : BaseController
     [HttpGet("hello")]
     public IActionResult Hello()
     {
-        return Ok("Hello");
+        return Ok("Hello!");
     }
 
     [AllowAnonymous]
