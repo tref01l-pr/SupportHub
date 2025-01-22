@@ -72,15 +72,15 @@ public class Program
             options.OperationFilter<SecurityRequirementsOperationFilter>();
         });
 
-        /*builder.Services.AddDbContext<SupportHubDbContext>(options =>
-            options.UseNpgsql(
-                Environment.GetEnvironmentVariable("DATABASE_URL"),
-                x => x.MigrationsAssembly("SupportHub.DataAccess.SqlServer")));*/
-        
         builder.Services.AddDbContext<SupportHubDbContext>(options =>
             options.UseNpgsql(
-                builder.Configuration.GetConnectionString("SupportHubDbContext"),
+                Environment.GetEnvironmentVariable("DATABASE_URL"),
                 x => x.MigrationsAssembly("SupportHub.DataAccess.SqlServer")));
+        
+        /*builder.Services.AddDbContext<SupportHubDbContext>(options =>
+            options.UseNpgsql(
+                builder.Configuration.GetConnectionString("SupportHubDbContext"),
+                x => x.MigrationsAssembly("SupportHub.DataAccess.SqlServer")));*/
 
 
         builder.Services
