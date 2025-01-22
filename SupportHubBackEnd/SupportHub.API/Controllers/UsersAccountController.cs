@@ -30,6 +30,7 @@ public class UsersAccountController : BaseController
     private readonly ICompaniesRepository _companyRepository;
     private readonly IEmailSmtpService _emailSmtpService;
     private readonly IUsersService _usersService;
+    private readonly IConfiguration _configuration;
 
     public UsersAccountController(
         ILogger<UsersAccountController> logger,
@@ -42,7 +43,8 @@ public class UsersAccountController : BaseController
         ICompaniesService companiesService,
         ICompaniesRepository companyRepository,
         IEmailSmtpService emailSmtpService,
-        IUsersService usersService)
+        IUsersService usersService,
+        IConfiguration configuration)
     {
         _logger = logger;
         _options = options.Value;
@@ -55,6 +57,7 @@ public class UsersAccountController : BaseController
         _companyRepository = companyRepository;
         _emailSmtpService = emailSmtpService;
         _usersService = usersService;
+        _configuration = configuration;
     }
 
     [AllowAnonymous]
@@ -62,6 +65,22 @@ public class UsersAccountController : BaseController
     public IActionResult Hello()
     {
         return Ok("Hello!");
+    }
+    
+    [AllowAnonymous]
+    [HttpGet("test-env-1")]
+    public IActionResult TestEnv1()
+    {
+        string? myVariable = Environment.GetEnvironmentVariable("MY_VARIABLE");
+        return Ok("TestEnv1 = " + myVariable);
+    }
+    
+    [AllowAnonymous]
+    [HttpGet("test-env-2")]
+    public IActionResult TestEnv2()
+    {
+        string? myVariable = _configuration["MY_VARIABLE"];
+        return Ok("TestEnv2 = " + myVariable);
     }
 
     [AllowAnonymous]
