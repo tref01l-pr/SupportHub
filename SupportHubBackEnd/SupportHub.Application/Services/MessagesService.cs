@@ -72,11 +72,12 @@ public class MessagesService : IMessagesService
 
             var emailMessageBuilder = EmailMessage.Builder()
                 .SetEmailConversationId(emailConversationId)
+                .SetEmailBotId(emailConversation.EmailBotId)
                 .SetEmailRequesterId(emailConversation.EmailRequesterId)
                 .SetUserId(userId)
                 .SetSubject("Re: " + emailConversation.Subject)
                 .SetBody(body)
-                .SetDate(DateTimeOffset.Now)
+                .SetDate(DateTimeOffset.UtcNow)
                 .SetMessageType(MessageTypes.Answer);
 
             var emailMessageWithoutMsgId = emailMessageBuilder.Build();
@@ -148,10 +149,6 @@ public class MessagesService : IMessagesService
         {
             var receivedMessageFromQuestionEmails =
                 await _emailConversationsRepository.GetLastByCompanyIdAsync<TProjectTo>(companyId);
-            if (!receivedMessageFromQuestionEmails.Any())
-            {
-                throw new Exception("Received messages not found");
-            }
 
             return receivedMessageFromQuestionEmails;
         }
@@ -307,7 +304,7 @@ public class MessagesService : IMessagesService
                 {
                     if (conversations.TryGetValue(parentMessage.MsgId, out var conversation))
                     {
-                        await CreateEmailMessage(message, conversation.Id, conversation.EmailRequesterId);
+                        await CreateEmailMessage(message, conversation.Id, conversation.EmailRequesterId, emailBot.Id);
                         continue;
                     }
 
@@ -316,7 +313,7 @@ public class MessagesService : IMessagesService
                 }
 
                 var parentMessageDb =
-                    await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.ReplyToMsgId);
+                    await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.ReplyToMsgId, emailBot.Id);
 
                 if (parentMessageDb == null)
                 {
@@ -325,7 +322,7 @@ public class MessagesService : IMessagesService
                 }
 
                 await CreateEmailMessage(message, parentMessageDb.EmailConversationId,
-                    parentMessageDb.EmailRequesterId.Value);
+                    parentMessageDb.EmailRequesterId.Value, emailBot.Id);
             }
 
             if (pendingReplies.Any())
@@ -344,7 +341,7 @@ public class MessagesService : IMessagesService
                 foreach (var conversation in result.Value)
                 {
                     var messageFromDb =
-                        await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(conversation.Key);
+                        await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(conversation.Key, emailBot.Id);
                     if (messageFromDb == null)
                     {
                         var firstMessage = conversation.Value.Find(m => m.MsgId == conversation.Key);
@@ -367,7 +364,7 @@ public class MessagesService : IMessagesService
                     foreach (var message in conversation.Value.Where(m => m.MsgId != conversation.Key))
                     {
                         await CreateEmailMessage(message, messageFromDb.EmailConversationId,
-                            messageFromDb.EmailRequesterId.Value);
+                            messageFromDb.EmailRequesterId.Value, emailBot.Id);
                     }
                 }
             }
@@ -386,7 +383,7 @@ public class MessagesService : IMessagesService
         ReceivedMessage message,
         EmailBotDto emailBot)
     {
-        var messageExist = await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.MsgId);
+        var messageExist = await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.MsgId, emailBot.Id);
         if (messageExist != null)
         {
             return Result.Failure<EmailMessageDto>("Message already exists");
@@ -414,7 +411,7 @@ public class MessagesService : IMessagesService
             return Result.Failure<EmailMessageDto>("Conversation not created");
         }
 
-        return await CreateEmailMessage(message, createdConversation.Id, emailRequester.Id);
+        return await CreateEmailMessage(message, createdConversation.Id, emailRequester.Id, emailBot.Id);
     }
 
     private async Task<Result<Dictionary<string, List<ReceivedMessage>>>> GetConversationsByReplyIdsAsync(
@@ -484,9 +481,10 @@ public class MessagesService : IMessagesService
     private async Task<Result<EmailMessageDto>> CreateEmailMessage(
         ReceivedMessage message,
         int conversationId,
-        int emailRequesterId)
+        int emailRequesterId,
+        int emailBotId)
     {
-        var messageExist = await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.MsgId);
+        var messageExist = await _emailMessagesRepository.GetByMessageIdAsync<EmailMessageDto>(message.MsgId, emailBotId);
         if (messageExist != null)
         {
             return Result.Failure<EmailMessageDto>("Message already exists");
@@ -494,6 +492,7 @@ public class MessagesService : IMessagesService
 
         var emailMessage = EmailMessage.Builder()
             .SetEmailConversationId(conversationId)
+            .SetEmailBotId(emailBotId)
             .SetEmailRequesterId(emailRequesterId)
             .SetMessageId(message.MsgId)
             .SetBody(message.Body)

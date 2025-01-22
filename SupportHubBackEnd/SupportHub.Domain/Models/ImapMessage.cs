@@ -119,7 +119,8 @@ public class ImapMessage
                     $"ImapMessage {nameof(body)} can`t be more than {MaxBodyLength} chars"));
         }
 
-        if (DateTimeOffset.Now < date)
+        date = date.ToUniversalTime();
+        if (DateTimeOffset.UtcNow < date)
         {
             failure = Result.Combine(
                 failure,

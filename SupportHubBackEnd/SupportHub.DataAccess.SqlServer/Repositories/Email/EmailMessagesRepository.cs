@@ -35,16 +35,6 @@ public class EmailMessagesRepository : IEmailMessagesRepository
             .ProjectTo<EmailMessage>(_mapperConfig)
             .ToArrayAsync();
 
-    public async Task<EmailMessage[]> GetLastMessagesAsync() =>
-        await _context.EmailMessages
-            .TagWith("Get last sent messages by question email")
-            .AsNoTracking()
-            .GroupBy(m => m.EmailConversationId)
-            .Select(g =>
-                g.OrderByDescending(m => m.Date).FirstOrDefault())
-            .ProjectTo<EmailMessage>(_mapperConfig)
-            .ToArrayAsync();
-
     public async Task<Result<TProjectTo>> CreateAsync<TProjectTo>(EmailMessage emailMessage)
     {
         var receivedMessageEntity = _mapper.Map<EmailMessage, EmailMessageEntity>(emailMessage);
@@ -74,11 +64,12 @@ public class EmailMessagesRepository : IEmailMessagesRepository
         return _mapper.Map<EmailMessageEntity, TProjectTo>(receivedMessageEntity);
     }
 
-    public async Task<TProjectTo?> GetByMessageIdAsync<TProjectTo>(string messageReplyToMsgId) =>
+    public async Task<TProjectTo?> GetByMessageIdAsync<TProjectTo>(string messageReplyToMsgId, int emailBotId) =>
         await _context.EmailMessages
             .TagWith("Get By Message Id Async")
             .AsNoTracking()
-            .Where(x => x.MessageId == messageReplyToMsgId)
+            .Where(x => x.MessageId == messageReplyToMsgId &&
+                        x.EmailBotId == emailBotId)
             .ProjectTo<TProjectTo>(_mapperConfig)
             .FirstOrDefaultAsync();
 

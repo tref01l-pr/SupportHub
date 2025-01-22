@@ -179,7 +179,8 @@ public class ReceivedMessage
             body = "null";
         }
 
-        if (date > DateTimeOffset.Now)
+        date = date.ToUniversalTime();
+        if (date > DateTimeOffset.UtcNow)
         {
             failure = Result.Combine(
                 failure,

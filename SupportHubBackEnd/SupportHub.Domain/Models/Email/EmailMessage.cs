@@ -11,6 +11,7 @@ public class EmailMessage
     private EmailMessage(
         int id,
         int emailConversationId,
+        int emailBotId,
         int emailRequesterId,
         Guid? userId,
         string? messageId,
@@ -21,6 +22,7 @@ public class EmailMessage
     {
         Id = id;
         EmailConversationId = emailConversationId;
+        EmailBotId = emailBotId;
         EmailRequesterId = emailRequesterId;
         UserId = userId;
         MessageId = messageId;
@@ -32,6 +34,7 @@ public class EmailMessage
 
     public int Id { get; init; }
     public int EmailConversationId { get; set; }
+    public int EmailBotId { get; set; }
     public int EmailRequesterId { get; set; }
     public Guid? UserId { get; set; }
     public string? MessageId { get; set; }
@@ -39,12 +42,13 @@ public class EmailMessage
     public string Body { get; set; }
     public DateTimeOffset Date { get; set; }
     public MessageTypes MessageType { get; set; }
-    public static EmaiilMessageBuilder Builder() => new EmaiilMessageBuilder();
+    public static EmailMessageBuilder Builder() => new EmailMessageBuilder();
 
-    public class EmaiilMessageBuilder
+    public class EmailMessageBuilder
     {
         private int _id;
         private int _emailConversationId;
+        private int _emailBotId;
         private int _emailRequesterId;
         private Guid? _userId = null;
         private string? _messageId;
@@ -53,56 +57,62 @@ public class EmailMessage
         private DateTimeOffset _date;
         private MessageTypes _messageType;
 
-        public EmaiilMessageBuilder SetId(int id)
+        public EmailMessageBuilder SetId(int id)
         {
             _id = id;
             return this;
         }
 
-        public EmaiilMessageBuilder SetEmailConversationId(int conversationId)
+        public EmailMessageBuilder SetEmailConversationId(int conversationId)
         {
             _emailConversationId = conversationId;
             return this;
         }
 
-        public EmaiilMessageBuilder SetEmailRequesterId(int emailRequesterId)
+        public EmailMessageBuilder SetEmailBotId(int emailBotId)
+        {
+            _emailBotId = emailBotId;
+            return this;
+        }
+
+        public EmailMessageBuilder SetEmailRequesterId(int emailRequesterId)
         {
             _emailRequesterId = emailRequesterId;
             return this;
         }
 
-        public EmaiilMessageBuilder SetUserId(Guid userId)
+        public EmailMessageBuilder SetUserId(Guid userId)
         {
             _userId = userId;
             return this;
         }
 
-        public EmaiilMessageBuilder SetMessageId(string messageId)
+        public EmailMessageBuilder SetMessageId(string messageId)
         {
             _messageId = messageId;
             return this;
         }
 
-        public EmaiilMessageBuilder SetSubject(string subject)
+        public EmailMessageBuilder SetSubject(string subject)
         {
             _subject = subject;
             return this;
         }
 
 
-        public EmaiilMessageBuilder SetBody(string body)
+        public EmailMessageBuilder SetBody(string body)
         {
             _body = body;
             return this;
         }
 
-        public EmaiilMessageBuilder SetDate(DateTimeOffset date)
+        public EmailMessageBuilder SetDate(DateTimeOffset date)
         {
-            _date = date;
+            _date = date.ToUniversalTime();
             return this;
         }
 
-        public EmaiilMessageBuilder SetMessageType(MessageTypes messageType)
+        public EmailMessageBuilder SetMessageType(MessageTypes messageType)
         {
             _messageType = messageType;
             return this;
@@ -113,6 +123,7 @@ public class EmailMessage
         {
             var validationResult = ValidateEmailMessageData(
                 _emailConversationId,
+                _emailBotId,
                 _emailRequesterId,
                 _userId,
                 _messageId,
@@ -129,6 +140,7 @@ public class EmailMessage
             return new EmailMessage(
                 _id,
                 _emailConversationId,
+                _emailBotId,
                 _emailRequesterId,
                 _userId,
                 _messageId,
@@ -142,6 +154,7 @@ public class EmailMessage
 
     private static Result ValidateEmailMessageData(
         int emailConversationId,
+        int emailBotId,
         int emailRequesterId,
         Guid? userId,
         string messageId,
@@ -153,6 +166,11 @@ public class EmailMessage
         if (emailConversationId <= 0)
         {
             return Result.Failure("EmailConversationId must be greater than zero.");
+        }
+
+        if (emailBotId <= 0)
+        {
+            return Result.Failure("EmailBotId must be greater than zero.");
         }
 
         if (emailRequesterId <= 0)
@@ -188,7 +206,7 @@ public class EmailMessage
             return Result.Failure("Date must be a valid value.");
         }
 
-        if (date > DateTimeOffset.Now)
+        if (date > DateTimeOffset.UtcNow)
         {
             return Result.Failure("Date cannot be in the future.");
         }

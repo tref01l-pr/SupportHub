@@ -80,6 +80,6 @@ public class EmailConversation
             return Result.Failure<EmailConversation>(failure.Error);
         }
 
-        return new EmailConversation(0, companyId, emailBotId, emailRequesterId, msgId, subject, lastUpdateDate);
+        return new EmailConversation(0, companyId, emailBotId, emailRequesterId, msgId, subject, lastUpdateDate.ToUniversalTime());
     }
 }

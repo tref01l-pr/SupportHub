@@ -62,7 +62,7 @@ public class EmailController : BaseController
         return Ok("Message was sent))");
     }
 
-    [HttpGet("get-last-conversations-by-companyId")]
+    [HttpGet("get-last-conversations")]
     public async Task<IActionResult> GetLastMessages()
     {
         if (CompanyId.IsFailure)

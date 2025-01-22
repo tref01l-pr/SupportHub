@@ -17,6 +17,7 @@ public class EmailBotEntity
     public DateOnly? DeletedOn { get; set; }
     public CompanyEntity Company { get; set; }
     public virtual ICollection<EmailConversationEntity> EmailConversations { get; set; }
+    public virtual ICollection<EmailMessageEntity> EmailMessages { get; set; }
 }
 
 public class EmailBotEntityConfiguration : IEntityTypeConfiguration<EmailBotEntity>
@@ -52,9 +53,9 @@ public class EmailBotEntityConfiguration : IEntityTypeConfiguration<EmailBotEnti
         builder.Property(x => x.DeletedOn)
             .IsRequired(false);
         
-        builder.HasIndex(msg => msg.Email)
+        /*builder.HasIndex(msg => msg.Email)
             .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
+            .HasFilter("[IsDeleted] = 0");*/
 
         builder.HasOne(eb => eb.Company)
             .WithMany(c => c.EmailBots)

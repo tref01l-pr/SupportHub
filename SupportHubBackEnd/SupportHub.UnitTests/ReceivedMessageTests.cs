@@ -24,7 +24,7 @@ public class ReceivedMessageTests
         var to = "romanlistsender@gmail.com";
         var subject = _fixture.Create<string>();
         var body = _fixture.Create<string>();
-        var date = DateTimeOffset.Now;
+        var date = DateTimeOffset.UtcNow;
         var botEmail = "romanlistsender@gmail.com";
 
         // act

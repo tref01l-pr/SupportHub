@@ -8,6 +8,7 @@ public class EmailMessageEntity
 {
     public int Id { get; set; }
     public int EmailConversationId { get; set; }
+    public int EmailBotId { get; set; }
     public int EmailRequesterId { get; set; }
     public Guid? UserId { get; set; }
     public string MessageId { get; set; }
@@ -16,6 +17,7 @@ public class EmailMessageEntity
     public DateTimeOffset Date { get; set; }
     public MessageTypes MessageType { get; set; }
     public EmailConversationEntity EmailConversation { get; set; }
+    public EmailBotEntity EmailBot { get; set; }
     public EmailRequesterEntity EmailRequester { get; set; }
     public UserEntity User { get; set; }
 }
@@ -27,6 +29,9 @@ public class EmailMessageEntityConfiguration : IEntityTypeConfiguration<EmailMes
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.EmailConversationId)
+            .IsRequired(true);
+        
+        builder.Property(x => x.EmailBotId)
             .IsRequired(true);
 
         builder.Property(x => x.EmailRequesterId)
@@ -47,13 +52,17 @@ public class EmailMessageEntityConfiguration : IEntityTypeConfiguration<EmailMes
         builder.Property(x => x.Date)
             .IsRequired(true);
 
-        //TODO add unique for one bot
-        builder.HasIndex(msg => msg.MessageId)
+        builder.HasIndex(msg => new { msg.MessageId, msg.EmailBotId })
             .IsUnique();
 
         builder.HasOne(em => em.EmailConversation)
             .WithMany(ec => ec.EmailMessages)
             .HasForeignKey(em => em.EmailConversationId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.HasOne(em => em.EmailBot)
+            .WithMany(ec => ec.EmailMessages)
+            .HasForeignKey(em => em.EmailBotId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(em => em.EmailRequester)

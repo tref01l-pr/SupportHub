@@ -50,7 +50,7 @@ public class ReceivedMessageDataGenerator
             var invalidBody = BaseDataGenerator.MakeInvalidString(invalidBodyData);
 
             // date
-            var invalidDate = DateTimeOffset.Now.AddDays(rnd.Next(1, 4));
+            var invalidDate = DateTimeOffset.UtcNow.AddDays(rnd.Next(1, 4));
 
             yield return new object[]
             {

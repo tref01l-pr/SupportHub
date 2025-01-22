@@ -22,7 +22,7 @@ public class EmailMessageTests
         var to = "romanlistsender@gmail.com";
         var subject = _fixture.Create<string>();
         var body = _fixture.Create<string>();
-        var date = DateTimeOffset.Now;
+        var date = DateTimeOffset.UtcNow;
 
         // act
         var result = EmailMessage.Create(userId, to, subject, body, date);

@@ -22,7 +22,7 @@ public class ImapMessageTests
         var from = "romanlistsender@gmail.com";
         var subject = _fixture.Create<string>();
         var body = _fixture.Create<string>();
-        var date = DateTimeOffset.Now;
+        var date = DateTimeOffset.UtcNow;
         var messageStatus = MessageTypes.Question;
 
         // act

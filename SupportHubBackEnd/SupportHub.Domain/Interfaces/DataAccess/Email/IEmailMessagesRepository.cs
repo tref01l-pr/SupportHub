@@ -8,7 +8,6 @@ public interface IEmailMessagesRepository
 {
     Task<Result<int>> GetNumberOfMessagesAsync();
     Task<EmailMessage[]> GetByRequesterIdAsync(int id);
-    Task<EmailMessage[]> GetLastMessagesAsync();
     Task<Result<TProjectTo>> CreateAsync<TProjectTo>(EmailMessage emailMessage);
-    Task<TProjectTo?> GetByMessageIdAsync<TProjectTo>(string messageReplyToMsgId);
+    Task<TProjectTo?> GetByMessageIdAsync<TProjectTo>(string messageReplyToMsgId, int emailBotId);
 }

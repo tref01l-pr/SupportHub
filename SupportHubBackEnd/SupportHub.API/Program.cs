@@ -28,14 +28,33 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.Configure<JWTSecretOptions>(
+        DotNetEnv.Env.Load("../.env");
+
+        /*builder.Services.Configure<JWTSecretOptions>(
             builder.Configuration.GetSection(JWTSecretOptions.JWTSecret));
         builder.Services.Configure<SmtpOptions>(
             builder.Configuration.GetSection(SmtpOptions.Smtp));
         builder.Services.Configure<ImapOptions>(
-            builder.Configuration.GetSection(ImapOptions.Imap));
-        builder.Services.Configure<GoogleApiOptions>(
-            builder.Configuration.GetSection(GoogleApiOptions.GoogleApi));
+            builder.Configuration.GetSection(ImapOptions.Imap));*/
+
+        builder.Services.Configure<JWTSecretOptions>(options =>
+        {
+            options.Secret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new Exception("JWT_SECRET is not set");
+        });
+        builder.Services.Configure<SmtpOptions>(options =>
+        {
+            options.User = Environment.GetEnvironmentVariable("SMTP_USER") ?? throw new Exception("SMTP_USER is not set");
+            options.Password = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? throw new Exception("SMTP_PASSWORD is not set");
+            options.Host = Environment.GetEnvironmentVariable("SMTP_HOST") ?? throw new Exception("SMTP_HOST is not set");
+            options.Port = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? throw new Exception("SMTP_PORT is not set"));
+        });
+        builder.Services.Configure<ImapOptions>(options =>
+        {
+            options.User = Environment.GetEnvironmentVariable("IMAP_USER") ?? throw new Exception("IMAP_USER is not set");
+            options.Password = Environment.GetEnvironmentVariable("IMAP_PASSWORD") ?? throw new Exception("IMAP_PASSWORD is not set");
+            options.Host = Environment.GetEnvironmentVariable("IMAP_HOST") ?? throw new Exception("IMAP_HOST is not set");
+            options.Port = int.Parse(Environment.GetEnvironmentVariable("IMAP_PORT") ?? throw new Exception("IMAP_PORT is not set"));
+        });
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -53,8 +72,13 @@ public class Program
             options.OperationFilter<SecurityRequirementsOperationFilter>();
         });
 
+        /*builder.Services.AddDbContext<SupportHubDbContext>(options =>
+            options.UseNpgsql(
+                Environment.GetEnvironmentVariable("DATABASE_URL"),
+                x => x.MigrationsAssembly("SupportHub.DataAccess.SqlServer")));*/
+        
         builder.Services.AddDbContext<SupportHubDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 builder.Configuration.GetConnectionString("SupportHubDbContext"),
                 x => x.MigrationsAssembly("SupportHub.DataAccess.SqlServer")));
 
@@ -86,7 +110,7 @@ public class Program
         builder.Services.AddTransient<Seed>();
         builder.Services.AddScoped<IEmailImapService, EmailImapService>();
         builder.Services.AddScoped<IEmailSmtpService, EmailSmtpService>();
-        
+
         builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
         builder.Services.AddScoped<IEmailMessagesRepository, EmailMessagesRepository>();
         builder.Services.AddScoped<ISessionsRepository, SessionsRepository>();
@@ -96,7 +120,7 @@ public class Program
         builder.Services.AddScoped<IEmailRequestersRepository, EmailRequestersRepository>();
         builder.Services.AddScoped<IEmailConversationsRepository, EmailConversationsRepository>();
         builder.Services.AddScoped<IEmailBotsRepository, EmailBotsRepository>();
-        
+
         builder.Services.AddScoped<IMessagesService, MessagesService>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IClientMessagesService, ClientsService>();
@@ -130,7 +154,6 @@ public class Program
         builder.Services.AddAuthorization();
 
 
-
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("Any", corsPolicyBuilder =>
@@ -162,8 +185,8 @@ public class Program
 
         /*if (app.Environment.IsDevelopment())
         {*/
-            app.UseSwagger();
-            app.UseSwaggerUI();
+        app.UseSwagger();
+        app.UseSwaggerUI();
         /*}*/
 
         /*using (var scope = app.Services.CreateScope())
