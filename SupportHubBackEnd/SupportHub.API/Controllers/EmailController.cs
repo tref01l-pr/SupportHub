@@ -298,7 +298,7 @@ public class EmailController : BaseController
         var result = await _messagesService.EventOnMessageReceivedAsync(_imapOptions);
         if (result.IsFailure)
         {
-            return BadRequest(result.Error);
+            return Ok(result.Error);
         }
 
         return Ok("Success!");
