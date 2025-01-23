@@ -165,7 +165,7 @@ public class Program
                         "https://localhost:5173",
                         "http://localhost:5174",
                         "https://mail-front-end-2vl6-f61l90s8c-anatoliis-projects-f2a5aed8.vercel.app",
-                        "https://mail-front-end-2vl6.vercel.app/",
+                        "https://mail-front-end-2vl6.vercel.app",
                         "https://mail-front-end-2vl6-3x8wujtzv-anatoliis-projects-f2a5aed8.vercel.app",
                     })
                     .AllowAnyHeader()
