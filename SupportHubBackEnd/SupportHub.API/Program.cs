@@ -167,6 +167,7 @@ public class Program
                         "https://mail-front-end-2vl6-f61l90s8c-anatoliis-projects-f2a5aed8.vercel.app",
                         "https://mail-front-end-2vl6.vercel.app",
                         "https://mail-front-end-2vl6-3x8wujtzv-anatoliis-projects-f2a5aed8.vercel.app",
+                        "https://mail-front-end-ten.vercel.app",
                     })
                     .AllowAnyHeader()
                     .AllowAnyMethod()
